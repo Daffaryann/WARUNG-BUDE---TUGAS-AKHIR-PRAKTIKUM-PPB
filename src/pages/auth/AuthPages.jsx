@@ -52,36 +52,21 @@ export function LoginPage({ onShowReg, onShowAdmin, onLoggedIn }) {
 
   const submit = async () => {
     if (!u || !p) { setErr('Email dan password wajib diisi.'); return }
-
-    // 1. Coba login via Supabase Auth
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: u,
-      password: p,
-    })
-
-    if (!error && data?.session) {
-      setErr('')
-      onLoggedIn('user')
-      return
-    }
-
-    // 2. Jika Supabase error (misal "Email not confirmed" / "rate limit"), periksa akun lokal/demo
+    
+    // Fallback akun demo jika Supabase belum dikonfigurasi
     if (login(u, p)) {
       setErr('')
       onLoggedIn('user')
       return
     }
 
-    if (error) {
-      if (error.message.includes('Email not confirmed')) {
-        setErr('Email belum dikonfirmasi di Supabase! Harap cek email Anda, atau matikan opsi "Confirm email" di Dashboard Supabase (Authentication -> Providers -> Email).')
-      } else {
-        setErr(error.message)
-      }
-      return
-    }
-
-    setErr('Email atau password salah.')
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: u,       // u = field email
+      password: p,
+    })
+    if (error) { setErr(error.message); return }
+    setErr('')
+    onLoggedIn('user')
   }
 
   const guest = () => { loginGuest(); toast('Masuk sebagai Tamu — transaksi tidak tersimpan'); onLoggedIn('user') }
@@ -129,7 +114,7 @@ export function LoginPage({ onShowReg, onShowAdmin, onLoggedIn }) {
 
 // ══ REGISTER ══
 export function RegisterPage({ onShowLogin, onLoggedIn }) {
-  const { login, saveRegisteredUser } = useApp()
+  const { login } = useApp()
   const toast = useToast()
   const [err, setErr] = useState('')
   const [nama, setNama] = useState('')
@@ -142,35 +127,15 @@ export function RegisterPage({ onShowLogin, onLoggedIn }) {
     if (p.length < 6) { setErr('Password minimal 6 karakter.'); return }
     if (p !== pk) { setErr('Password dan konfirmasi tidak cocok.'); return }
 
-    // Simpan ke daftar user terdaftar lokal agar langsung bisa dipakai login
-    if (saveRegisteredUser) {
-      saveRegisteredUser({ u, p, nama, role: 'user' })
-    }
-
     const { data, error } = await supabase.auth.signUp({
       email: u,
       password: p,
       options: { data: { nama } }   // simpan nama di metadata
     })
-
-    if (error) {
-      if (error.message.includes('rate limit')) {
-        setErr('Supabase email rate limit tercapai. Akun Anda tetap tersimpan! Matikan opsi "Confirm email" di Dashboard Supabase agar langsung aktif.')
-        onShowLogin()
-        return
-      }
-      setErr(error.message)
-      return
-    }
-
+    if (error) { setErr(error.message); return }
     setErr('')
-    if (data?.session) {
-      toast('Akun berhasil dibuat! Anda langsung masuk.')
-      onLoggedIn('user')
-    } else {
-      toast('Akun berhasil dibuat! Silakan masuk.')
-      onShowLogin()
-    }
+    toast('Cek email kamu untuk konfirmasi akun!')
+    onShowLogin()
   }
 
   return (

@@ -787,3 +787,8 @@ body {
   body > *:not(#print-area) { display: none !important; }
   #print-area { display: block !important; position: fixed; inset: 0; background: #fff; z-index: 99999; padding: 24px; }
 }
+
+/* -- OFFLINE BANNER -- */
+.offline-banner { background: #FEF3C7; border-bottom: 2px solid #D97706; color: #92400E; padding: 10px 18px; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 10px; position: sticky; top: 60px; z-index: 90; }
+@media (max-width: 767px) { .offline-banner { top: 56px; font-size: 11.5px; padding: 9px 14px; } }
+

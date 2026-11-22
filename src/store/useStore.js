@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-// ── DATA AWAL (fallback jika Supabase belum terisi / offline) ──
+// ── DATA AWAL (fallback jika Supabase belum terisi) ──
 export const INITIAL_PRODUK = [
   { id: 1,  nama: 'Telur Ayam Negeri',        kat: 'Makanan',      hB: 24000, hJ: 28000, stok: 120, sat: 'butir',   img: '' },
   { id: 2,  nama: 'Minyak Goreng Bimoli 2L',  kat: 'Makanan',      hB: 28000, hJ: 32000, stok: 2,   sat: 'botol',   img: '' },
@@ -32,48 +32,28 @@ export const INITIAL_USERS = [
 let _nId = 200
 
 export function useStore() {
+  // Ambil produk dari Supabase
   const [produk, setProduk]   = useState([])
   const [trx, setTrx]         = useState(INITIAL_TRX)
-  const [users, setUsers]     = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('waroengbude_registered_users') || '[]')
-      return [...INITIAL_USERS, ...saved]
-    } catch {
-      return INITIAL_USERS
-    }
-  })
+  const [users]               = useState(INITIAL_USERS)
   const [cart, setCart]       = useState([])
   const [cu, setCu]           = useState(null)   // current user
 
-  // Simpan akun baru ke persistent list lokal agar bisa login langsung
-  const saveRegisteredUser = useCallback((newUser) => {
-    setUsers(prev => {
-      const updated = [...prev.filter(x => x.u !== newUser.u), newUser]
-      try {
-        const saved = JSON.parse(localStorage.getItem('waroengbude_registered_users') || '[]')
-        localStorage.setItem('waroengbude_registered_users', JSON.stringify([...saved.filter(x => x.u !== newUser.u), newUser]))
-      } catch {}
-      return updated
-    })
-  }, [])
-
-  // ── FETCH PRODUK DARI SUPABASE (DENGAN LOCALSTORAGE MERGE PERSISTENCE) ──
+  // ── FETCH PRODUK DARI SUPABASE ──
   useEffect(() => {
     supabase.from('produk').select('*').order('id')
       .then(({ data, error }) => {
-        const customImgs = (() => {
-          try { return JSON.parse(localStorage.getItem('waroengbude_custom_imgs') || '{}') } catch { return {} }
-        })()
-        let baseList = (data && data.length > 0) ? data : INITIAL_PRODUK
-        const merged = baseList.map(p => customImgs[p.id] ? { ...p, img: customImgs[p.id] } : p)
-        setProduk(merged)
+        if (data && data.length > 0) {
+          setProduk(data)
+        } else if (error) {
+          console.warn('Supabase fetch error, fallback ke data lokal:', error.message)
+          setProduk(INITIAL_PRODUK)
+        } else {
+          setProduk(data || INITIAL_PRODUK)
+        }
       })
       .catch(() => {
-        const customImgs = (() => {
-          try { return JSON.parse(localStorage.getItem('waroengbude_custom_imgs') || '{}') } catch { return {} }
-        })()
-        const merged = INITIAL_PRODUK.map(p => customImgs[p.id] ? { ...p, img: customImgs[p.id] } : p)
-        setProduk(merged)
+        setProduk(INITIAL_PRODUK)
       })
   }, [])
 
@@ -116,7 +96,7 @@ export function useStore() {
     setCart(prev => {
       const ci = prev.find(c => c.id === id)
       if (ci) {
-        if (ci.qty >= p.stok) return prev
+        if (ci.qty >= p.stok) return prev // stok tidak cukup
         return prev.map(c => c.id === id ? { ...c, qty: c.qty + 1 } : c)
       }
       return [...prev, { id: p.id, nama: p.nama, harga: p.hJ, qty: 1, img: p.img, sat: p.sat }]
@@ -160,10 +140,11 @@ export function useStore() {
       items: cart.map(c => ({ nama: c.nama, qty: c.qty, h: c.harga, sat: c.sat }))
     }
 
+    // Simpan transaksi ke Supabase
     try {
       const { error } = await supabase.from('transaksi').insert(trxData)
       if (error) {
-        console.warn('Supabase transaksi insert:', error.message)
+        console.warn('Gagal menyimpan transaksi ke Supabase:', error.message)
       }
     } catch (err) {
       console.warn('Supabase insert error:', err)
@@ -172,6 +153,7 @@ export function useStore() {
     if (cu && !cu.isGuest) {
       setTrx(prev => [trxData, ...prev])
     }
+    // Kurangi stok lokal
     setProduk(prev => prev.map(p => {
       const ci = cart.find(c => c.id === p.id)
       return ci ? { ...p, stok: p.stok - ci.qty } : p
@@ -183,15 +165,11 @@ export function useStore() {
   // ── UPLOAD FOTO KE SUPABASE STORAGE ──
   const uploadFoto = useCallback(async (file, produkId) => {
     try {
-      const ext = file.name ? file.name.split('.').pop() : 'png'
-      const path = `produk/${produkId}-${Date.now()}.${ext}`
+      const path = `produk/${produkId}-${Date.now()}`
       const { data, error } = await supabase.storage
         .from('produk-images')
         .upload(path, file, { upsert: true })
-      if (error) {
-        console.warn('Storage upload error:', error.message)
-        return null
-      }
+      if (error) return null
       const { data: url } = supabase.storage.from('produk-images').getPublicUrl(path)
       return url?.publicUrl || null
     } catch {
@@ -199,71 +177,26 @@ export function useStore() {
     }
   }, [])
 
-  // ── UPDATE FOTO PRODUK (PERSISTENT CLOUD + LOCAL CACHE) ──
-  const updateProdukImg = useCallback(async (id, imgOrFile) => {
-    let finalUrl = ''
-    if (typeof imgOrFile === 'string') {
-      finalUrl = imgOrFile
-    } else if (imgOrFile instanceof File || imgOrFile instanceof Blob) {
-      const cloudUrl = await uploadFoto(imgOrFile, id)
-      if (cloudUrl) {
-        finalUrl = cloudUrl
-      } else {
-        finalUrl = await new Promise((res) => {
-          const r = new FileReader()
-          r.onload = ev => res(ev.target.result)
-          r.readAsDataURL(imgOrFile)
-        })
-      }
-    }
-
-    if (!finalUrl) return
-
-    // Update state
-    setProduk(prev => prev.map(p => p.id === id ? { ...p, img: finalUrl } : p))
-
-    // Simpan ke Supabase Database
-    try {
-      await supabase.from('produk').update({ img: finalUrl }).eq('id', id)
-    } catch {}
-
-    // Simpan ke cache persistent localStorage agar tidak hilang saat reload/relog
-    try {
-      const customImgs = JSON.parse(localStorage.getItem('waroengbude_custom_imgs') || '{}')
-      customImgs[id] = finalUrl
-      localStorage.setItem('waroengbude_custom_imgs', JSON.stringify(customImgs))
-    } catch {}
-
-    return finalUrl
-  }, [uploadFoto])
-
   // ── PRODUK ADMIN ──
-  const saveProduk = useCallback(async (data) => {
+  const saveProduk = useCallback((data) => {
     if (data.id) {
       setProduk(prev => prev.map(p => p.id === data.id ? { ...p, ...data } : p))
-      try {
-        await supabase.from('produk').update(data).eq('id', data.id)
-      } catch {}
     } else {
-      const newId = _nId++
-      const newProd = { ...data, id: newId }
-      setProduk(prev => [...prev, newProd])
-      try {
-        await supabase.from('produk').insert(newProd)
-      } catch {}
+      setProduk(prev => [...prev, { ...data, id: _nId++ }])
     }
   }, [])
 
-  const delProduk = useCallback(async (id) => {
+  const delProduk = useCallback((id) => {
     setProduk(prev => prev.filter(p => p.id !== id))
-    try {
-      await supabase.from('produk').delete().eq('id', id)
-    } catch {}
+  }, [])
+
+  const updateProdukImg = useCallback((id, img) => {
+    setProduk(prev => prev.map(p => p.id === id ? { ...p, img } : p))
   }, [])
 
   // ── AUTH ──
   const login = useCallback((u, p) => {
-    const f = users.find(x => (x.u === u || x.u?.toLowerCase() === u?.toLowerCase()) && x.p === p)
+    const f = users.find(x => x.u === u && x.p === p && x.role === 'user')
     if (!f) return false
     setCu(f)
     return true
@@ -295,8 +228,8 @@ export function useStore() {
     produk, trx, users, cart, cu, rp,
     cartTotal, cartCount, userTrx, kritis,
     addCart, ubahQty, delCart, clearCart,
-    konfirmasi, uploadFoto, updateProdukImg,
-    saveProduk, delProduk, saveRegisteredUser,
+    konfirmasi, uploadFoto,
+    saveProduk, delProduk, updateProdukImg,
     login, loginAdmin, loginGuest, logout,
     setProduk, setTrx,
   }

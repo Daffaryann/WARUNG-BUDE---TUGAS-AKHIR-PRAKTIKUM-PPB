@@ -11,7 +11,7 @@ function iph(p) {
 }
 
 export function AdminApp({ onLogout }) {
-  const { produk, trx, cu, rp, saveProduk, delProduk, uploadFoto } = useApp()
+  const { produk, trx, cu, rp, saveProduk, delProduk } = useApp()
   const toast = useToast()
 
   const [page, setPage]             = useState('dashboard')
@@ -67,23 +67,9 @@ export function AdminApp({ onLogout }) {
     )
   })
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!form.nama || !form.kat || !form.sat) { toast('Lengkapi semua field!'); return }
-    let imgUrl = form.img
-    if (form.file && uploadFoto) {
-      const uploaded = await uploadFoto(form.file, editId || Date.now())
-      if (uploaded) imgUrl = uploaded
-    }
-    const cleanForm = { ...form }
-    delete cleanForm.file
-    await saveProduk({
-      ...cleanForm,
-      img: imgUrl,
-      id: editId || undefined,
-      hB: parseInt(form.hB) || 0,
-      hJ: parseInt(form.hJ) || 0,
-      stok: parseInt(form.stok) || 0
-    })
+    saveProduk({ ...form, id: editId || undefined, hB: parseInt(form.hB) || 0, hJ: parseInt(form.hJ) || 0, stok: parseInt(form.stok) || 0 })
     toast(editId ? 'Produk diperbarui!' : form.nama + ' ditambahkan!')
     setForm(emptyForm); setEditId(null); nav('produk')
   }
@@ -101,7 +87,7 @@ export function AdminApp({ onLogout }) {
   const handleFoto = (e) => {
     const f = e.target.files[0]; if (!f) return
     const r = new FileReader()
-    r.onload = ev => setForm(prev => ({ ...prev, img: ev.target.result, file: f }))
+    r.onload = ev => setForm(prev => ({ ...prev, img: ev.target.result }))
     r.readAsDataURL(f)
   }
 
