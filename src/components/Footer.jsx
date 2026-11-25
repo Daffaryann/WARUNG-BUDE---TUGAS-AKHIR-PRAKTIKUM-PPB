@@ -12,9 +12,7 @@ export function Footer({ onNav, isAdmin }) {
       <div className="footer-inner">
         <div className="footer-brand">
           <div className="fb-logo">
-            <div className="fb-logomark-round">
-              <span className="fb-bj">WaroengBude</span>
-            </div>
+            <div className="fb-wordmark">WaroengBude</div>
           </div>
           <div className="fb-tagline">Sembako, Groceries, Online.</div>
         </div>
@@ -41,7 +39,7 @@ export function Footer({ onNav, isAdmin }) {
       </div>
 
       <div className="footer-bottom">
-        &copy; 2026 Waroeng Bude
+        &copy; 2026 WaroengBude
       </div>
     </footer>
   )

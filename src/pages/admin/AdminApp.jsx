@@ -26,8 +26,9 @@ export function AdminApp({ onLogout }) {
   const [searchTentang, setSearchTentang] = useState('')
 
   // Form state
-  const emptyForm = { nama: '', kat: 'Makanan', sat: 'buah', hB: '', hJ: '', stok: '', img: '' }
+  const emptyForm = { nama: '', kat: 'Makanan', sat: 'buah', hB: '', hJ: '', stok: '', img: '', imgFile: null }
   const [form, setForm] = useState(emptyForm)
+  const [saving, setSaving] = useState(false)
   const kats = ['Makanan', 'Minuman', 'Kebersihan', 'Bumbu Dapur', 'Alat Tulis', 'Lainnya']
 
   const nav = (p) => { setPage(p); window.scrollTo(0, 0) }
@@ -67,27 +68,45 @@ export function AdminApp({ onLogout }) {
     )
   })
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.nama || !form.kat || !form.sat) { toast('Lengkapi semua field!'); return }
-    saveProduk({ ...form, id: editId || undefined, hB: parseInt(form.hB) || 0, hJ: parseInt(form.hJ) || 0, stok: parseInt(form.stok) || 0 })
+    setSaving(true)
+    const res = await saveProduk({
+      ...form,
+      id: editId || undefined,
+      hB: parseInt(form.hB) || 0,
+      hJ: parseInt(form.hJ) || 0,
+      stok: parseInt(form.stok) || 0,
+    })
+    setSaving(false)
+    if (res && !res.ok) {
+      toast(res.msg || 'Gagal menyimpan produk ke database')
+      return
+    }
     toast(editId ? 'Produk diperbarui!' : form.nama + ' ditambahkan!')
     setForm(emptyForm); setEditId(null); nav('produk')
   }
 
   const handleEdit = (p) => {
-    setForm({ nama: p.nama, kat: p.kat, sat: p.sat, hB: p.hB, hJ: p.hJ, stok: p.stok, img: p.img || '' })
+    setForm({ nama: p.nama, kat: p.kat, sat: p.sat, hB: p.hB, hJ: p.hJ, stok: p.stok, img: p.img || '', imgFile: null })
     setEditId(p.id); nav('tambah')
   }
 
-  const handleDel = (id) => {
+  const handleDel = async (id) => {
     if (!window.confirm('Hapus produk ini?')) return
-    delProduk(id); toast('Produk dihapus'); nav('produk')
+    const res = await delProduk(id)
+    if (res && !res.ok) {
+      toast('Gagal hapus produk: ' + res.msg)
+      return
+    }
+    toast('Produk dihapus'); nav('produk')
   }
 
   const handleFoto = (e) => {
     const f = e.target.files[0]; if (!f) return
+    if (f.size > 5 * 1024 * 1024) { toast('Ukuran foto maksimal 5MB'); return }
     const r = new FileReader()
-    r.onload = ev => setForm(prev => ({ ...prev, img: ev.target.result }))
+    r.onload = ev => setForm(prev => ({ ...prev, img: ev.target.result, imgFile: f }))
     r.readAsDataURL(f)
   }
 
@@ -145,10 +164,10 @@ export function AdminApp({ onLogout }) {
 
             <div className="stats-row" style={{ padding: 0, marginBottom: 16 }}>
               {[
-                { label: 'Total Produk', val: produk.length, cl: 'sc-a', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></> },
-                { label: 'Transaksi', val: trx.length, cl: 'sc-b', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /></> },
-                { label: 'Stok Kritis', val: kritis.length, cl: 'sc-r', icon: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /></> },
-                { label: 'Total Revenue', val: rp(totalRevenue), cl: 'sc-g', icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>, isStr: true },
+                { label: 'Total Produk', val: produk.length, cl: 'sc-a', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
+                { label: 'Transaksi', val: trx.length, cl: 'sc-b', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></> },
+                { label: 'Stok Kritis', val: kritis.length, cl: 'sc-r', icon: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></> },
+                { label: 'Total Revenue', val: rp(totalRevenue), cl: 'sc-g', icon: <><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 10v4M18 10v4" /></>, isStr: true },
               ].map((s, i) => (
                 <div key={i} className={`stat-card ${s.cl} card-anim`}>
                   <div className="s-ic"><svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{s.icon}</svg></div>
@@ -276,7 +295,7 @@ export function AdminApp({ onLogout }) {
                 {form.img
                   ? <div style={{ position: 'relative' }}>
                     <img src={form.img} className="foto-prev show" alt="Preview" />
-                    <button className="bukti-ubah" onClick={() => setForm(p => ({ ...p, img: '' }))}>Ubah</button>
+                    <button className="bukti-ubah" onClick={() => setForm(p => ({ ...p, img: '', imgFile: null }))}>Ubah</button>
                   </div>
                   : <label className="foto-area btn-lift" htmlFor="aFotoInput">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
@@ -285,8 +304,8 @@ export function AdminApp({ onLogout }) {
                 }
                 <input type="file" id="aFotoInput" accept="image/*" style={{ display: 'none' }} onChange={handleFoto} />
               </div>
-              <button className="btn btn-g btn-bounce" style={{ width: '100%', padding: 13 }} onClick={handleSave}>
-                {editId ? 'Simpan Perubahan' : 'Simpan Produk'}
+              <button className="btn btn-g btn-bounce" style={{ width: '100%', padding: 13 }} onClick={handleSave} disabled={saving}>
+                {saving ? 'Menyimpan...' : (editId ? 'Simpan Perubahan' : 'Simpan Produk')}
               </button>
             </div>
           </div>

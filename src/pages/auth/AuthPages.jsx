@@ -82,7 +82,6 @@ export function LoginPage({ onShowReg, onShowAdmin, onLoggedIn }) {
         <div className="auth-card">
           <h3>Masuk</h3>
           <p className="sub">Masuk ke akun pelanggan Anda</p>
-          <div className="auth-info"><b>Demo:</b> Username <b>user</b> / Password <b>user123</b></div>
           {err && <div className="auth-err show">{err}</div>}
           <div className="form-group">
             <label className="form-label">Email / Username</label>
@@ -207,7 +206,6 @@ export function AdminLoginPage({ onShowLogin, onLoggedIn }) {
               Panel Administrator
             </div>
           </div>
-          <div className="auth-info"><b>Demo:</b> Username <b>admin</b> / Password <b>admin123</b></div>
           {err && <div className="auth-err show">{err}</div>}
           <div className="form-group">
             <label className="form-label">Username Admin</label>

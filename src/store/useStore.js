@@ -34,12 +34,13 @@ let _nId = 200
 export function useStore() {
   // Ambil produk dari Supabase
   const [produk, setProduk]   = useState([])
-  const [trx, setTrx]         = useState(INITIAL_TRX)
+  const [trx, setTrx]         = useState([])
+  const [heroImg, setHeroImg] = useState('')
   const [users]               = useState(INITIAL_USERS)
   const [cart, setCart]       = useState([])
   const [cu, setCu]           = useState(null)   // current user
 
-  // ── FETCH PRODUK DARI SUPABASE ──
+  // ── FETCH PRODUK, TRANSAKSI, & BANNER DARI SUPABASE ──
   useEffect(() => {
     supabase.from('produk').select('*').order('id')
       .then(({ data, error }) => {
@@ -55,6 +56,22 @@ export function useStore() {
       .catch(() => {
         setProduk(INITIAL_PRODUK)
       })
+
+    supabase.from('transaksi').select('*').order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (data) setTrx(data)
+        else if (error) console.warn('Fetch transaksi gagal:', error.message)
+      })
+      .catch(() => {})
+
+    supabase.storage.from('produk-images').list('banner', { limit: 1 })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const { data: urlData } = supabase.storage.from('produk-images').getPublicUrl(`banner/${data[0].name}`)
+          if (urlData?.publicUrl) setHeroImg(urlData.publicUrl)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   // ── SINKRONISASI SESSION SUPABASE AUTH ──
@@ -123,75 +140,233 @@ export function useStore() {
   const cartCount = cart.reduce((a, c) => a + c.qty, 0)
 
   // ── CHECKOUT & SIMPAN TRANSAKSI KE SUPABASE ──
-  const konfirmasi = useCallback(async (metode, bukti) => {
+  const konfirmasi = useCallback(async (metode, bukti, buktiFile = null) => {
     const now = new Date()
     const tgl = now.toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     const jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    const id = 'TRX-' + String(_nId++).padStart(4, '0')
+
+    // Hitung jumlah transaksi yang sudah ada di tabel transaksi
+    const { count } = await supabase
+      .from('transaksi')
+      .select('*', { count: 'exact', head: true })
+
+    // Format menjadi TRX-01, TRX-02, dst.
+    const nomorUrut = String((count || 0) + 1).padStart(2, '0')
+    const idTransaksi = `TRX-${nomorUrut}`
+
     const total = cartTotal
-    const trxData = {
-      id,
-      user: cu && !cu.isGuest ? cu.u : 'tamu',
+
+    let buktiUrl = metode === 'transfer' ? bukti : ''
+    if (metode === 'transfer' && buktiFile) {
+      const ext = buktiFile.name?.split('.').pop() || 'jpg'
+      const path = `bukti/${idTransaksi}-${Date.now()}.${ext}`
+      // Coba bucket bukti-transfer terlebih dahulu, jika tidak ada fallback ke produk-images
+      let uploaded = null
+      const { error: errBucket } = await supabase.storage.from('bukti-transfer').upload(path, buktiFile, { upsert: true })
+      if (!errBucket) {
+        uploaded = supabase.storage.from('bukti-transfer').getPublicUrl(path)?.data?.publicUrl
+      } else {
+        const { error: errFallback } = await supabase.storage.from('produk-images').upload(path, buktiFile, { upsert: true })
+        if (!errFallback) {
+          uploaded = supabase.storage.from('produk-images').getPublicUrl(path)?.data?.publicUrl
+        }
+      }
+      if (uploaded) buktiUrl = uploaded
+    }
+
+    const itemsPayload = cart.map(c => ({ nama: c.nama, qty: c.qty, h: c.harga, sat: c.sat }))
+    const baseData = {
+      id: idTransaksi,
       nama: cu ? cu.nama : 'Tamu',
       tgl: tgl + ', ' + jam,
       total,
       metode,
-      bukti: metode === 'transfer' ? bukti : '',
-      items: cart.map(c => ({ nama: c.nama, qty: c.qty, h: c.harga, sat: c.sat }))
+      bukti: buktiUrl,
+      items: itemsPayload,
+    }
+
+    const trxWithUser = {
+      ...baseData,
+      user: cu && !cu.isGuest ? cu.u : 'tamu',
     }
 
     // Simpan transaksi ke Supabase
-    try {
-      const { error } = await supabase.from('transaksi').insert(trxData)
-      if (error) {
-        console.warn('Gagal menyimpan transaksi ke Supabase:', error.message)
+    let insertError = null
+    const { error: firstErr } = await supabase.from('transaksi').insert([trxWithUser])
+    if (firstErr) {
+      // Jika tabel memakai kolom user_id (uuid) alih-alih user (text), coba ulang dengan user_id
+      if (firstErr.message?.includes('user') && !firstErr.message?.includes('user_id')) {
+        const trxWithUserId = {
+          ...baseData,
+          ...(cu?.id ? { user_id: cu.id } : {}),
+        }
+        const { error: secondErr } = await supabase.from('transaksi').insert([trxWithUserId])
+        insertError = secondErr
+      } else {
+        insertError = firstErr
       }
-    } catch (err) {
-      console.warn('Supabase insert error:', err)
     }
 
-    if (cu && !cu.isGuest) {
-      setTrx(prev => [trxData, ...prev])
+    if (insertError) {
+      console.warn('Gagal menyimpan transaksi ke Supabase:', insertError.message)
+      return { ok: false, error: insertError.message }
     }
-    // Kurangi stok lokal
+
+    const savedTrx = { ...trxWithUser }
+    setTrx(prev => [savedTrx, ...prev])
+
+    // Kurangi stok di Supabase & state lokal
+    for (const ci of cart) {
+      const prod = produk.find(p => p.id === ci.id)
+      if (prod) {
+        const newStok = Math.max(0, prod.stok - ci.qty)
+        await supabase.from('produk').update({ stok: newStok }).eq('id', ci.id)
+      }
+    }
     setProduk(prev => prev.map(p => {
       const ci = cart.find(c => c.id === p.id)
-      return ci ? { ...p, stok: p.stok - ci.qty } : p
+      return ci ? { ...p, stok: Math.max(0, p.stok - ci.qty) } : p
     }))
     setCart([])
-    return trxData
-  }, [cart, cartTotal, cu])
+    return { ok: true, data: savedTrx }
+  }, [cart, cartTotal, cu, produk])
 
   // ── UPLOAD FOTO KE SUPABASE STORAGE ──
-  const uploadFoto = useCallback(async (file, produkId) => {
+  const uploadFoto = useCallback(async (file, produkId = 'new') => {
     try {
-      const path = `produk/${produkId}-${Date.now()}`
-      const { data, error } = await supabase.storage
+      const ext = file.name?.split('.').pop() || 'jpg'
+      const path = `produk/${produkId}-${Date.now()}.${ext}`
+      const { error } = await supabase.storage
         .from('produk-images')
         .upload(path, file, { upsert: true })
-      if (error) return null
+      if (error) {
+        console.warn('Upload foto ke Supabase Storage gagal:', error.message)
+        return null
+      }
       const { data: url } = supabase.storage.from('produk-images').getPublicUrl(path)
       return url?.publicUrl || null
-    } catch {
+    } catch (err) {
+      console.warn('Upload foto error:', err)
       return null
     }
   }, [])
 
   // ── PRODUK ADMIN ──
-  const saveProduk = useCallback((data) => {
-    if (data.id) {
-      setProduk(prev => prev.map(p => p.id === data.id ? { ...p, ...data } : p))
-    } else {
-      setProduk(prev => [...prev, { ...data, id: _nId++ }])
+  const saveProduk = useCallback(async (data) => {
+    const { id, imgFile, ...rest } = data
+    let imgUrl = rest.img || ''
+
+    // 1. Upload foto ke Supabase Storage terlebih dahulu jika ada file baru
+    if (imgFile) {
+      const uploadedUrl = await uploadFoto(imgFile, id || 'new')
+      if (!uploadedUrl) {
+        return { ok: false, msg: 'Gagal upload foto ke Storage (produk-images). Cek policy bucket Supabase.' }
+      }
+      imgUrl = uploadedUrl
     }
-  }, [])
 
-  const delProduk = useCallback((id) => {
+    const payload = {
+      nama: rest.nama,
+      kat: rest.kat,
+      sat: rest.sat,
+      hB: rest.hB,
+      hJ: rest.hJ,
+      stok: rest.stok,
+      img: imgUrl,
+    }
+
+    // 2. Simpan (.update / .insert) ke tabel produk Supabase
+    if (id) {
+      const { data: updated, error } = await supabase
+        .from('produk')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) {
+        console.warn('Update produk ke Supabase gagal:', error.message)
+        return { ok: false, msg: 'Gagal update produk: ' + error.message }
+      }
+      setProduk(prev => prev.map(p => p.id === id ? (updated || { ...p, ...payload }) : p))
+      return { ok: true, data: updated }
+    } else {
+      const { data: inserted, error } = await supabase
+        .from('produk')
+        .insert(payload)
+        .select()
+        .single()
+      if (error) {
+        console.warn('Insert produk ke Supabase gagal:', error.message)
+        return { ok: false, msg: 'Gagal simpan produk: ' + error.message }
+      }
+      setProduk(prev => [...prev, inserted])
+      return { ok: true, data: inserted }
+    }
+  }, [uploadFoto])
+
+  const delProduk = useCallback(async (id) => {
+    const { error } = await supabase.from('produk').delete().eq('id', id)
+    if (error) {
+      console.warn('Hapus produk di Supabase gagal:', error.message)
+      return { ok: false, msg: error.message }
+    }
     setProduk(prev => prev.filter(p => p.id !== id))
+    return { ok: true }
   }, [])
 
-  const updateProdukImg = useCallback((id, img) => {
-    setProduk(prev => prev.map(p => p.id === id ? { ...p, img } : p))
+  const updateProdukImg = useCallback(async (id, fileOrUrl) => {
+    let imgUrl = typeof fileOrUrl === 'string' ? fileOrUrl : ''
+
+    if (fileOrUrl instanceof File) {
+      const uploadedUrl = await uploadFoto(fileOrUrl, id)
+      if (!uploadedUrl) {
+        return { ok: false, msg: 'Gagal upload foto ke Storage (produk-images)' }
+      }
+      imgUrl = uploadedUrl
+    }
+
+    if (!imgUrl) return { ok: false, msg: 'Foto tidak valid' }
+
+    const { error } = await supabase
+      .from('produk')
+      .update({ img: imgUrl })
+      .eq('id', id)
+
+    if (error) {
+      console.warn('Update foto produk di Supabase gagal:', error.message)
+      return { ok: false, msg: 'Gagal update foto ke database: ' + error.message }
+    }
+
+    setProduk(prev => prev.map(p => p.id === id ? { ...p, img: imgUrl } : p))
+    return { ok: true, url: imgUrl }
+  }, [uploadFoto])
+
+  // ── UPLOAD BANNER HERO KE SUPABASE STORAGE ──
+  const uploadBanner = useCallback(async (file) => {
+    try {
+      const ext = file.name?.split('.').pop() || 'jpg'
+      const path = `banner/hero-banner.${ext}`
+      const { data: existing } = await supabase.storage.from('produk-images').list('banner')
+      if (existing && existing.length > 0) {
+        const oldPaths = existing.map(f => `banner/${f.name}`).filter(p => p !== path)
+        if (oldPaths.length > 0) {
+          await supabase.storage.from('produk-images').remove(oldPaths)
+        }
+      }
+      const { error } = await supabase.storage
+        .from('produk-images')
+        .upload(path, file, { upsert: true })
+      if (error) {
+        console.warn('Upload banner gagal:', error.message)
+        return { ok: false, msg: 'Gagal upload banner: ' + error.message }
+      }
+      const { data: urlData } = supabase.storage.from('produk-images').getPublicUrl(path)
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
+      setHeroImg(publicUrl)
+      return { ok: true, url: publicUrl }
+    } catch (err) {
+      return { ok: false, msg: err?.message || 'Upload banner error' }
+    }
   }, [])
 
   // ── AUTH ──
@@ -225,10 +400,10 @@ export function useStore() {
   const kritis  = produk.filter(p => p.stok <= 5 && p.stok > 0)
 
   return {
-    produk, trx, users, cart, cu, rp,
+    produk, trx, heroImg, users, cart, cu, rp,
     cartTotal, cartCount, userTrx, kritis,
     addCart, ubahQty, delCart, clearCart,
-    konfirmasi, uploadFoto,
+    konfirmasi, uploadFoto, uploadBanner,
     saveProduk, delProduk, updateProdukImg,
     login, loginAdmin, loginGuest, logout,
     setProduk, setTrx,

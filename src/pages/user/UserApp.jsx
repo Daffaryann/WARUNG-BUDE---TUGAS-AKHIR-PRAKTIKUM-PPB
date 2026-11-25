@@ -30,7 +30,7 @@ function UserNav({ page, cartCount, onNav, onLogout, cu }) {
       <nav className="navbar">
         <button className="nb-logo btn-lift" onClick={() => onNav('beranda')}>
           <div className="nb-logo-mark">W</div>
-          <div className="nb-logo-text">WaroengBude<small>Sembako Online</small></div>
+          <div className="nb-logo-text">WaroengBude<small>Transaksi Online</small></div>
         </button>
         <div className="nb-links">
           {pages.map(p => (
@@ -93,33 +93,37 @@ function ProdukCard({ p, isSelected, onAdd, onDetail, onImgUpload }) {
 
 // ══ USER APP ══
 export function UserApp({ onLogout, onNavigateScreen }) {
-  const { produk, trx, cart, cu, rp, cartCount, cartTotal, userTrx, kritis, addCart, ubahQty, delCart, clearCart, konfirmasi, updateProdukImg } = useApp()
+  const { produk, trx, heroImg, cart, cu, rp, cartCount, cartTotal, userTrx, kritis, addCart, ubahQty, delCart, clearCart, konfirmasi, updateProdukImg, uploadBanner } = useApp()
   const toast = useToast()
   const isOnline = useOnlineStatus()
 
   const [page, setPage] = useState('beranda')
   const [detTrxId, setDetTrxId] = useState(null)
-  const [heroImg, setHeroImg] = useState('')
   const [filterF, setFilterF] = useState('Semua')
   const [search, setSearch] = useState('')
   const [searchBeranda, setSearchBeranda] = useState('')
   const [searchTrx, setSearchTrx] = useState('')
   const [searchTentang, setSearchTentang] = useState('')
-  const [searchProfil, setSearchProfil] = useState('')
   const [selectedProdId, setSelectedProdId] = useState(produk[0]?.id || 1)
   const [mobileTab, setMobileTab] = useState('katalog') // 'katalog' | 'keranjang'
   const [modal, setModal] = useState(false)
   const [metode, setMetode] = useState('cash')
   const [bukti, setBukti] = useState('')
+  const [buktiFile, setBuktiFile] = useState(null)
   const [finalTrx, setFinalTrx] = useState(null)
 
   const nav = (p) => { setPage(p); window.scrollTo(0, 0) }
 
-  const handleImgUpload = (e, id) => {
+  const handleImgUpload = async (e, id) => {
     const f = e.target.files[0]; if (!f) return
-    const r = new FileReader()
-    r.onload = ev => { updateProdukImg(id, ev.target.result); toast('Foto diperbarui') }
-    r.readAsDataURL(f)
+    if (f.size > 5 * 1024 * 1024) { toast('Ukuran foto maksimal 5MB'); return }
+    toast('Mengupload foto...')
+    const res = await updateProdukImg(id, f)
+    if (res?.ok) {
+      toast('Foto diperbarui!')
+    } else {
+      toast(res?.msg || 'Gagal upload foto ke Supabase')
+    }
   }
 
   const handleAddCart = (id) => {
@@ -167,18 +171,20 @@ export function UserApp({ onLogout, onNavigateScreen }) {
   // ── CHECKOUT ──
   const handleKonfirmasi = async () => {
     if (metode === 'transfer' && !bukti) { toast('Upload bukti transfer terlebih dahulu'); return }
-    const result = await konfirmasi(metode, bukti)
-    if (result) {
-      setFinalTrx(result)
-      setMetode('cash'); setBukti('')
+    const result = await konfirmasi(metode, bukti, buktiFile)
+    if (!result?.ok) {
+      toast('Gagal menyimpan transaksi: ' + (result?.error || 'Cek koneksi & tabel transaksi Supabase'))
+      return
     }
+    setFinalTrx(result.data)
+    setMetode('cash'); setBukti(''); setBuktiFile(null)
   }
 
   const handleBuktiUpload = (e) => {
     const f = e.target.files[0]; if (!f) return
     if (f.size > 5 * 1024 * 1024) { toast('Ukuran max 5MB'); return }
     const r = new FileReader()
-    r.onload = ev => { setBukti(ev.target.result); toast('Bukti berhasil diupload') }
+    r.onload = ev => { setBukti(ev.target.result); setBuktiFile(f); toast('Bukti siap diupload') }
     r.readAsDataURL(f)
   }
 
@@ -224,7 +230,14 @@ export function UserApp({ onLogout, onNavigateScreen }) {
               <label className="hero-upload btn-lift" htmlFor="heroUpload">
                 <svg fill="none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>Ganti
               </label>
-              <input type="file" id="heroUpload" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setHeroImg(ev.target.result); r.readAsDataURL(f) }} />
+              <input type="file" id="heroUpload" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+                const f = e.target.files[0]; if (!f) return
+                if (f.size > 5 * 1024 * 1024) { toast('Ukuran banner maksimal 5MB'); return }
+                toast('Mengupload banner...')
+                const res = await uploadBanner(f)
+                if (res?.ok) toast('Banner diperbarui!')
+                else toast(res?.msg || 'Gagal upload banner')
+              }} />
             </div>
           </div>
 
@@ -534,17 +547,6 @@ export function UserApp({ onLogout, onNavigateScreen }) {
         <div className={`page${page === 'profil' ? ' aktif' : ''}`}>
           <div className="pc" style={{ maxWidth: 640 }}>
             <div className="sec-head"><span className="sec-title">Profil Akun</span></div>
-
-            {/* Search Bar Profil */}
-            <div className="search-box">
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
-              <input
-                className="search-input"
-                placeholder="Cari info profil atau riwayat akun..."
-                value={searchProfil}
-                onChange={e => setSearchProfil(e.target.value)}
-              />
-            </div>
 
             {/* KONDISI AKUN: TAMU vs TERDAFTAR */}
             {cu && cu.isGuest ? (
