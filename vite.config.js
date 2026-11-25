@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'WaroengBude',
         short_name: 'WaroengBude',
-        description: 'Toko Sembako Online – Toko Berkat Jaya',
+        description: 'Toko Sembako – WaroengBude',
         theme_color: '#1A7A3C',
         background_color: '#F7FAF8',
         display: 'standalone',

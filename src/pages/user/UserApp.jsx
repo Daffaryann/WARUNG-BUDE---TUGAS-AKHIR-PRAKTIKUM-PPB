@@ -9,14 +9,14 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 // ══ HELPERS ══
 function spill(stok) {
   if (stok === 0) return <span className="stok-pill sp-out">Habis</span>
-  if (stok <= 5)  return <span className="stok-pill sp-warn">Sisa {stok}</span>
+  if (stok <= 5) return <span className="stok-pill sp-warn">Sisa {stok}</span>
   return <span className="stok-pill sp-ok">Tersedia</span>
 }
 
 function iph(p, size = 54) {
   return p.img
     ? <img src={p.img} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-    : <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width={size * 0.5} height={size * 0.5}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    : <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width={size * 0.5} height={size * 0.5}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
 }
 
 // ══ NAVBAR USER ══
@@ -49,11 +49,11 @@ function UserNav({ page, cartCount, onNav, onLogout, cu }) {
       </nav>
       <nav className="bottom-nav">
         {[
-          { key: 'beranda', label: 'Beranda', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
-          { key: 'produk', label: 'Produk', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></> },
-          { key: 'transaksi', label: 'Transaksi', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/></> },
-          { key: 'tentang', label: 'Tentang', icon: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></> },
-          { key: 'profil', label: 'Profil', icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></> },
+          { key: 'beranda', label: 'Beranda', icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></> },
+          { key: 'produk', label: 'Produk', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
+          { key: 'transaksi', label: 'Transaksi', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><line x1="8" y1="9" x2="16" y2="9" /><line x1="8" y1="13" x2="14" y2="13" /></> },
+          { key: 'tentang', label: 'Tentang', icon: <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></> },
+          { key: 'profil', label: 'Profil', icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
         ].map(item => (
           <button key={item.key} className={`bnav-item${page === item.key ? ' aktif' : ''}`} onClick={() => onNav(item.key)}>
             <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon}</svg>
@@ -72,7 +72,7 @@ function ProdukCard({ p, isSelected, onAdd, onDetail, onImgUpload }) {
       <div className="p-img">
         {iph(p)}
         <label className="p-ul btn-bounce" htmlFor={`upd-${p.id}`} onClick={e => e.stopPropagation()}>
-          <svg fill="none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Foto
+          <svg fill="none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>Foto
         </label>
         <input type="file" id={`upd-${p.id}`} accept="image/*" style={{ display: 'none' }} onChange={e => onImgUpload(e, p.id)} onClick={e => e.stopPropagation()} />
       </div>
@@ -83,7 +83,7 @@ function ProdukCard({ p, isSelected, onAdd, onDetail, onImgUpload }) {
         <div className="p-foot">
           {spill(p.stok)}
           <button className="add-btn btn-bounce" disabled={p.stok === 0} onClick={e => { e.stopPropagation(); onAdd(p.id) }} title="Tambah ke Keranjang">
-            <svg fill="none" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg fill="none" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           </button>
         </div>
       </div>
@@ -94,24 +94,24 @@ function ProdukCard({ p, isSelected, onAdd, onDetail, onImgUpload }) {
 // ══ USER APP ══
 export function UserApp({ onLogout, onNavigateScreen }) {
   const { produk, trx, cart, cu, rp, cartCount, cartTotal, userTrx, kritis, addCart, ubahQty, delCart, clearCart, konfirmasi, updateProdukImg } = useApp()
-  const toast    = useToast()
+  const toast = useToast()
   const isOnline = useOnlineStatus()
 
-  const [page, setPage]             = useState('beranda')
-  const [detTrxId, setDetTrxId]     = useState(null)
-  const [heroImg, setHeroImg]       = useState('')
-  const [filterF, setFilterF]       = useState('Semua')
-  const [search, setSearch]         = useState('')
+  const [page, setPage] = useState('beranda')
+  const [detTrxId, setDetTrxId] = useState(null)
+  const [heroImg, setHeroImg] = useState('')
+  const [filterF, setFilterF] = useState('Semua')
+  const [search, setSearch] = useState('')
   const [searchBeranda, setSearchBeranda] = useState('')
-  const [searchTrx, setSearchTrx]   = useState('')
+  const [searchTrx, setSearchTrx] = useState('')
   const [searchTentang, setSearchTentang] = useState('')
-  const [searchProfil, setSearchProfil]   = useState('')
+  const [searchProfil, setSearchProfil] = useState('')
   const [selectedProdId, setSelectedProdId] = useState(produk[0]?.id || 1)
-  const [mobileTab, setMobileTab]   = useState('katalog') // 'katalog' | 'keranjang'
-  const [modal, setModal]           = useState(false)
-  const [metode, setMetode]         = useState('cash')
-  const [bukti, setBukti]           = useState('')
-  const [finalTrx, setFinalTrx]     = useState(null)
+  const [mobileTab, setMobileTab] = useState('katalog') // 'katalog' | 'keranjang'
+  const [modal, setModal] = useState(false)
+  const [metode, setMetode] = useState('cash')
+  const [bukti, setBukti] = useState('')
+  const [finalTrx, setFinalTrx] = useState(null)
 
   const nav = (p) => { setPage(p); window.scrollTo(0, 0) }
 
@@ -185,7 +185,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
   const tutupModal = () => { setModal(false); setFinalTrx(null); nav('transaksi') }
 
   const activeProduk = produk.find(p => p.id === selectedProdId) || filteredProduk[0] || produk[0] || null
-  const detTrx       = trx.find(t => t.id === detTrxId)
+  const detTrx = trx.find(t => t.id === detTrxId)
 
   return (
     <div className="app aktif" style={{ flexDirection: 'column' }}>
@@ -195,7 +195,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
       {!isOnline && (
         <div className="offline-banner">
           <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width="16" height="16">
-            <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+            <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
           </svg>
           Tidak ada koneksi internet — hanya browsing tersedia. Transaksi tidak dapat diproses.
         </div>
@@ -208,7 +208,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
             <div className="hero-txt">
               <div className="hero-tag">Selamat Datang di WaroengBude</div>
               <h1>Solusi Terbaik untuk Kebutuhan Sembako</h1>
-              <p>Belanja sembako lengkap — beras, minyak, gula, dan ribuan produk lainnya dengan harga terbaik.</p>
+              <p>Belanja sembako lengkap beras, minyak, gula, dan ribuan produk lainnya dengan harga terbaik.</p>
               <div className="hero-btns">
                 <button className="btn-hw btn-bounce" onClick={() => nav('produk')}>Belanja Sekarang</button>
                 <button className="btn-hs btn-lift" onClick={() => nav('tentang')}>Tentang Kami</button>
@@ -217,12 +217,12 @@ export function UserApp({ onLogout, onNavigateScreen }) {
             <div className="hero-img">
               {heroImg ? <img src={heroImg} alt="Banner" /> : (
                 <div className="hero-img-ph">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
                   <p>Upload Banner</p>
                 </div>
               )}
               <label className="hero-upload btn-lift" htmlFor="heroUpload">
-                <svg fill="none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Ganti
+                <svg fill="none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>Ganti
               </label>
               <input type="file" id="heroUpload" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setHeroImg(ev.target.result); r.readAsDataURL(f) }} />
             </div>
@@ -231,7 +231,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
           <div className="pc" style={{ paddingBottom: 0 }}>
             {/* Search Bar Beranda */}
             <div className="search-box">
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
                 className="search-input"
                 placeholder="Cari produk di Beranda (beras, minyak, telur, mie)..."
@@ -243,10 +243,10 @@ export function UserApp({ onLogout, onNavigateScreen }) {
 
           <div className="stats-row">
             {[
-              { cl: 'sc-a', val: produk.length, lbl: 'Total Produk', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></> },
-              { cl: 'sc-r', val: kritis.length, lbl: 'Stok Kritis',  icon: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> },
-              { cl: 'sc-b', val: userTrx.length, lbl: 'Transaksi Saya', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/></> },
-              { cl: 'sc-g', val: cartCount,      lbl: 'Di Keranjang', icon: <><path d="M2 4h3l2.4 10.2a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 .96-.73L21 7H5.7"/><line x1="6.5" y1="11" x2="19.8" y2="11"/><circle cx="9" cy="19.5" r="1.5"/><circle cx="17.5" cy="19.5" r="1.5"/></> },
+              { cl: 'sc-a', val: produk.length, lbl: 'Total Produk', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
+              { cl: 'sc-r', val: kritis.length, lbl: 'Stok Kritis', icon: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></> },
+              { cl: 'sc-b', val: userTrx.length, lbl: 'Transaksi Saya', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><line x1="8" y1="9" x2="16" y2="9" /><line x1="8" y1="13" x2="14" y2="13" /></> },
+              { cl: 'sc-g', val: cartCount, lbl: 'Di Keranjang', icon: <><path d="M2 4h3l2.4 10.2a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 .96-.73L21 7H5.7" /><line x1="6.5" y1="11" x2="19.8" y2="11" /><circle cx="9" cy="19.5" r="1.5" /><circle cx="17.5" cy="19.5" r="1.5" /></> },
             ].map((s, i) => (
               <div key={i} className={`stat-card ${s.cl} card-anim`} onClick={() => s.lbl === 'Di Keranjang' ? nav('produk') : undefined} style={{ cursor: s.lbl === 'Di Keranjang' ? 'pointer' : 'default' }}>
                 <div className="s-ic"><svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{s.icon}</svg></div>
@@ -295,18 +295,18 @@ export function UserApp({ onLogout, onNavigateScreen }) {
 
             {/* Search Bar Produk */}
             <div className="search-box">
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input className="search-input" placeholder="Cari nama produk atau kategori..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
 
             {/* Mobile View Switcher */}
             <div className="pc-view-toggle">
               <button className={`pvt-btn${mobileTab === 'katalog' ? ' aktif' : ''}`} onClick={() => setMobileTab('katalog')}>
-                <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
                 Katalog Produk
               </button>
               <button className={`pvt-btn${mobileTab === 'keranjang' ? ' aktif' : ''}`} onClick={() => setMobileTab('keranjang')}>
-                <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path d="M2 4h3l2.4 10.2a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 .96-.73L21 7H5.7"/><circle cx="9" cy="19.5" r="1.5"/><circle cx="17.5" cy="19.5" r="1.5"/></svg>
+                <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path d="M2 4h3l2.4 10.2a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 .96-.73L21 7H5.7" /><circle cx="9" cy="19.5" r="1.5" /><circle cx="17.5" cy="19.5" r="1.5" /></svg>
                 Keranjang {cartCount > 0 && <span className="pvt-badge">{cartCount}</span>}
               </button>
             </div>
@@ -394,10 +394,10 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                   {cart.length === 0 ? (
                     <div className="cart-empty" style={{ padding: '24px 12px' }}>
                       <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{ width: 36, height: 36, margin: '0 auto 8px', display: 'block', stroke: 'var(--S3)' }}>
-                        <path d="M2 4h3l2.4 10.2a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 .96-.73L21 7H5.7"/>
-                        <line x1="6.5" y1="11" x2="19.8" y2="11"/>
-                        <circle cx="9" cy="19.5" r="1.5"/>
-                        <circle cx="17.5" cy="19.5" r="1.5"/>
+                        <path d="M2 4h3l2.4 10.2a1 1 0 0 0 1 .8h9.8a1 1 0 0 0 .96-.73L21 7H5.7" />
+                        <line x1="6.5" y1="11" x2="19.8" y2="11" />
+                        <circle cx="9" cy="19.5" r="1.5" />
+                        <circle cx="17.5" cy="19.5" r="1.5" />
                       </svg>
                       <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--T2)' }}>Keranjang kosong</p>
                       <small style={{ color: 'var(--S3)' }}>Pilih produk di katalog untuk belanja</small>
@@ -408,7 +408,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                         {cart.map(c => (
                           <div key={c.id} className="cart-item" style={{ padding: '8px 10px', gap: 10, margin: 0, borderRadius: 'var(--rs)' }}>
                             <div className="ci-img" style={{ width: 44, height: 44, flexShrink: 0 }}>
-                              {c.img ? <img src={c.img} alt={c.nama} /> : <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
+                              {c.img ? <img src={c.img} alt={c.nama} /> : <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>}
                             </div>
                             <div className="ci-info">
                               <div className="ci-nama" style={{ fontSize: 12.5 }}>{c.nama}</div>
@@ -420,7 +420,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                               </div>
                             </div>
                             <button className="ci-del btn-bounce" onClick={() => { delCart(c.id); toast('Dihapus') }} title="Hapus">
-                              <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                              <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /></svg>
                             </button>
                           </div>
                         ))}
@@ -458,7 +458,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
 
             {/* Search Bar Transaksi */}
             <div className="search-box">
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
                 className="search-input"
                 placeholder="Cari transaksi (Kode TRX, tanggal, nama barang, metode)..."
@@ -470,18 +470,18 @@ export function UserApp({ onLogout, onNavigateScreen }) {
             {filteredUserTrx.length === 0
               ? <div style={{ textAlign: 'center', padding: 40, color: 'var(--S3)' }}>{searchTrx ? 'Transaksi tidak ditemukan' : 'Belum ada transaksi'}</div>
               : filteredUserTrx.map(t => (
-                  <div key={t.id} className="trx-card card-anim" onClick={() => handleDetTrx(t.id)}>
-                    <div>
-                      <div className="trx-id">{t.id}</div>
-                      <div className="trx-tgl">{t.tgl}</div>
-                      <span className="trx-status">Selesai</span>
-                    </div>
-                    <div>
-                      <div className="trx-total">{rp(t.total)}</div>
-                      <div className="trx-cnt">{t.items.length} item</div>
-                    </div>
+                <div key={t.id} className="trx-card card-anim" onClick={() => handleDetTrx(t.id)}>
+                  <div>
+                    <div className="trx-id">{t.id}</div>
+                    <div className="trx-tgl">{t.tgl}</div>
+                    <span className="trx-status">Selesai</span>
                   </div>
-                ))
+                  <div>
+                    <div className="trx-total">{rp(t.total)}</div>
+                    <div className="trx-cnt">{t.items.length} item</div>
+                  </div>
+                </div>
+              ))
             }
           </div>
         </div>
@@ -494,7 +494,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
 
               {/* Search Bar Tentang */}
               <div className="search-box" style={{ marginBottom: 18 }}>
-                <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
                 <input
                   className="search-input"
                   placeholder="Cari info tentang toko, alamat, atau kontak..."
@@ -504,22 +504,21 @@ export function UserApp({ onLogout, onNavigateScreen }) {
               </div>
 
               <div className="about-desc-block">
-                <p>Toko Berkat Jaya adalah sebuah usaha retail yang secara khusus fokus pada penjualan sembako, singkatan dari sembilan bahan pokok, seperti beras, gula, minyak, tepung, dan produk pangan lainnya.</p>
+                <p>WaroengBude adalah sebuah usaha retail yang secara khusus fokus pada penjualan sembako, dari sembilan bahan pokok, seperti beras, gula, minyak, tepung, dan produk pangan lainnya.</p>
                 <p>Berkat Jaya telah menjadi pilihan utama bagi masyarakat yang mencari solusi praktis untuk memenuhi kebutuhan dapur mereka dengan jangkauan produk yang lengkap dan pelayanan yang ramah.</p>
               </div>
-
               <div className="about-info-cards">
                 <div className="about-info-card" id="lokasi-toko">
-                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg></div>
                   <div>
                     <div className="aic-title">Alamat &amp; Lokasi</div>
-                    <div className="aic-sub">Jl. Tambak Rejo 59, Surabaya</div>
-                    <div className="aic-sub">Cabang: Jl. Tambak Rejo I No. 25</div>
-                    <div className="aic-tag">SURABAYA</div>
+                    <div className="aic-sub">Jl. Mulawarman Selatan, Kota Semarang</div>
+                    <div className="aic-sub">Cabang: Jl. Mulawarman Selatan, Kota Semarang</div>
+                    <div className="aic-tag">Kota Semarang</div>
                   </div>
                 </div>
                 <div className="about-info-card">
-                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.42 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16l.19.92z"/></svg></div>
+                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.42 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16l.19.92z" /></svg></div>
                   <div>
                     <div className="aic-title">Kontak Resmi</div>
                     <div className="aic-sub">Telp / WhatsApp</div>
@@ -538,7 +537,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
 
             {/* Search Bar Profil */}
             <div className="search-box">
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
                 className="search-input"
                 placeholder="Cari info profil atau riwayat akun..."
@@ -551,7 +550,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
             {cu && cu.isGuest ? (
               <div className="guest-card">
                 <div className="guest-icon">
-                  <svg viewBox="0 0 24 24" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <svg viewBox="0 0 24 24" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 </div>
                 <h3 className="guest-title">Akun Tamu</h3>
                 <p className="guest-desc">
@@ -584,7 +583,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                     <h3>{cu?.nama || 'Pengguna'}</h3>
                     <p>@{cu?.u || 'user'}</p>
                     <span className="profile-role-badge">
-                      <svg fill="none" stroke="currentColor" width="12" height="12" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                      <svg fill="none" stroke="currentColor" width="12" height="12" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
                       {cu?.role === 'admin' ? 'Administrator' : 'Pelanggan Terdaftar'}
                     </span>
                   </div>
@@ -626,7 +625,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
         <div className={`page${page === 'detail-trx' ? ' aktif' : ''}`}>
           <div className="pc">
             <button className="back-btn btn-lift" onClick={() => nav('transaksi')}>
-              <svg fill="none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Kembali
+              <svg fill="none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>Kembali
             </button>
             {detTrx && (
               <>
@@ -651,7 +650,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                     pa.innerHTML = `<div style="font-family:sans-serif;padding:24px;max-width:360px;margin:auto"><h2 style="color:#1A7A3C">${detTrx.id}</h2><p>${detTrx.tgl}</p></div>`
                     pa.style.display = 'block'; window.print(); setTimeout(() => pa.style.display = 'none', 1000)
                   }}>
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
                     Cetak Struk
                   </button>
                 </div>
@@ -686,11 +685,11 @@ export function UserApp({ onLogout, onNavigateScreen }) {
             <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--T2)', marginBottom: 8 }}>Metode Pembayaran</div>
             <div className="pay-method-row">
               <button className={`pay-method-btn${metode === 'cash' ? ' aktif' : ''}`} onClick={() => setMetode('cash')}>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0"/><path d="M6 12h.01M18 12h.01"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0" /><path d="M6 12h.01M18 12h.01" /></svg>
                 <div className="pm-label">Tunai (Cash)</div><div className="pm-sub">Bayar langsung di kasir</div>
               </button>
               <button className={`pay-method-btn${metode === 'transfer' ? ' aktif' : ''}`} onClick={() => setMetode('transfer')}>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
                 <div className="pm-label">Transfer Bank</div><div className="pm-sub">BCA / BRI / Mandiri</div>
               </button>
             </div>
@@ -702,7 +701,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                     <div key={i} className="rek-info">
                       <div><div className="rek-bank">{r.bank}</div><div className="rek-num">{r.num}</div><div className="rek-name">a.n. Berkat Jaya</div></div>
                       <button className="rek-copy-btn" onClick={() => {
-                        try { const ta = document.createElement('textarea'); ta.value = r.bank + ' · ' + r.num; ta.style.cssText = 'position:fixed;top:-9999px'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('Nomor rekening disalin!') } catch {}
+                        try { const ta = document.createElement('textarea'); ta.value = r.bank + ' · ' + r.num; ta.style.cssText = 'position:fixed;top:-9999px'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('Nomor rekening disalin!') } catch { }
                       }}>Salin</button>
                     </div>
                   ))}
@@ -710,7 +709,7 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                 <div className="bukti-label">Upload Bukti Transfer</div>
                 {!bukti ? (
                   <label className="bukti-upload-area btn-lift" htmlFor="buktiInput">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                     <p>Ketuk untuk upload bukti transfer</p><small>JPG, PNG, max 5MB</small>
                   </label>
                 ) : (

@@ -64,7 +64,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f0;display:flex;
     return `
       <div class="struk-header">
         <div class="sh-logo">WaroengBude</div>
-        <div class="sh-sub">Toko Berkat Jaya<br>Jl. Tambak Rejo 59, Surabaya<br>Telp: 0813-3119-2564</div>
+        <div class="sh-sub">Toko Berkat Jaya<br>Jl. Mulawarman Selatan, Semarang<br>Telp: 0813-3119-2564</div>
         <div class="sh-no">${id}</div>
       </div>
       <div class="struk-meta">
@@ -93,7 +93,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f0;display:flex;
     <div>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <svg width="48" height="48" fill="none" stroke="var(--G1)" strokeWidth="1.5" viewBox="0 0 24 24">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
         </svg>
         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--T)', marginTop: 6 }}>Pembayaran Berhasil!</div>
         <div style={{ fontSize: 12, color: 'var(--S3)', marginTop: 3 }}>{id} telah dicatat</div>
@@ -102,14 +102,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f0;display:flex;
       <div className="struk-wrap">
         <div className="struk-header">
           <div className="sh-logo">WaroengBude</div>
-          <div className="sh-sub">Toko Berkat Jaya<br />Jl. Tambak Rejo 59, Surabaya<br />Telp: 0813-3119-2564</div>
+          <div className="sh-sub">WaroengBude<br />Jl. Mulawarman Selatan, Semarang <br />Telp: 0813-3119-2564</div>
           <div className="sh-no">{id}</div>
         </div>
 
         <div className="struk-meta">
           <div className="struk-meta-row"><span className="sk">Tanggal</span><span className="sv">{tgl}</span></div>
           <div className="struk-meta-row"><span className="sk">Kasir</span><span className="sv">{nama}</span></div>
-          <div className="struk-meta-row"><span className="sk">Lokasi</span><span className="sv">Jl. Tambak Rejo 59</span></div>
+          <div className="struk-meta-row"><span className="sk">Lokasi</span><span className="sv">Jl. Mulawarman Selatan</span></div>
         </div>
 
         <div className="struk-items">
@@ -144,17 +144,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f0;display:flex;
       <div className="struk-actions">
         <button className="btn-print btn-bounce" onClick={handleCetak}>
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <polyline points="6 9 6 2 18 2 18 9"/>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-            <rect x="6" y="14" width="12" height="8"/>
+            <polyline points="6 9 6 2 18 2 18 9" />
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+            <rect x="6" y="14" width="12" height="8" />
           </svg>
           Cetak Struk
         </button>
         <button className="btn-download btn-bounce" onClick={handleDownload}>
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
           Download
         </button>

@@ -7,22 +7,22 @@ import { Footer } from '../../components/Footer'
 function iph(p) {
   return p.img
     ? <img src={p.img} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-    : <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width={18} height={18}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    : <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width={18} height={18}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
 }
 
 export function AdminApp({ onLogout }) {
   const { produk, trx, cu, rp, saveProduk, delProduk } = useApp()
   const toast = useToast()
 
-  const [page, setPage]             = useState('dashboard')
-  const [detTrxId, setDetTrxId]     = useState(null)
-  const [editId, setEditId]         = useState(null)
-  const [showStruk, setShowStruk]   = useState(null)
+  const [page, setPage] = useState('dashboard')
+  const [detTrxId, setDetTrxId] = useState(null)
+  const [editId, setEditId] = useState(null)
+  const [showStruk, setShowStruk] = useState(null)
 
   // Search states for Admin pages
-  const [searchDash, setSearchDash]       = useState('')
-  const [searchProduk, setSearchProduk]   = useState('')
-  const [searchTrx, setSearchTrx]         = useState('')
+  const [searchDash, setSearchDash] = useState('')
+  const [searchProduk, setSearchProduk] = useState('')
+  const [searchTrx, setSearchTrx] = useState('')
   const [searchTentang, setSearchTentang] = useState('')
 
   // Form state
@@ -92,10 +92,10 @@ export function AdminApp({ onLogout }) {
   }
 
   const navItems = [
-    { key: 'dashboard', label: 'Dashboard', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
-    { key: 'produk',    label: 'Produk',    icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></> },
-    { key: 'transaksi', label: 'Transaksi', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/></> },
-    { key: 'tentang',   label: 'Tentang',   icon: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></> },
+    { key: 'dashboard', label: 'Dashboard', icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></> },
+    { key: 'produk', label: 'Produk', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
+    { key: 'transaksi', label: 'Transaksi', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><line x1="8" y1="9" x2="16" y2="9" /><line x1="8" y1="13" x2="14" y2="13" /></> },
+    { key: 'tentang', label: 'Tentang', icon: <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></> },
   ]
 
   return (
@@ -127,14 +127,14 @@ export function AdminApp({ onLogout }) {
             <h2 id="aGreet">Selamat datang, {cu?.nama || 'Admin'}</h2>
             <p>Kelola produk dan transaksi WaroengBude</p>
             <div className="a-badge">
-              <svg fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
               Admin
             </div>
           </div>
           <div className="pc">
             {/* Search Bar Dashboard */}
             <div className="search-box" style={{ marginBottom: 16 }}>
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
                 className="search-input"
                 placeholder="Cari cepat stok kritis atau transaksi di dashboard..."
@@ -145,10 +145,10 @@ export function AdminApp({ onLogout }) {
 
             <div className="stats-row" style={{ padding: 0, marginBottom: 16 }}>
               {[
-                { label: 'Total Produk', val: produk.length, cl: 'sc-a', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></> },
-                { label: 'Transaksi', val: trx.length, cl: 'sc-b', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/></> },
-                { label: 'Stok Kritis', val: kritis.length, cl: 'sc-r', icon: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></> },
-                { label: 'Total Revenue', val: rp(totalRevenue), cl: 'sc-g', icon: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>, isStr: true },
+                { label: 'Total Produk', val: produk.length, cl: 'sc-a', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></> },
+                { label: 'Transaksi', val: trx.length, cl: 'sc-b', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /></> },
+                { label: 'Stok Kritis', val: kritis.length, cl: 'sc-r', icon: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /></> },
+                { label: 'Total Revenue', val: rp(totalRevenue), cl: 'sc-g', icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>, isStr: true },
               ].map((s, i) => (
                 <div key={i} className={`stat-card ${s.cl} card-anim`}>
                   <div className="s-ic"><svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{s.icon}</svg></div>
@@ -198,7 +198,7 @@ export function AdminApp({ onLogout }) {
 
             {/* Search Bar Kelola Produk */}
             <div className="search-box" style={{ marginBottom: 14 }}>
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
                 className="search-input"
                 placeholder="Cari produk berdasarkan nama, kategori, atau satuan..."
@@ -237,7 +237,7 @@ export function AdminApp({ onLogout }) {
         <div className={`page${page === 'tambah' ? ' aktif' : ''}`}>
           <div className="pc">
             <button className="back-btn btn-lift" onClick={() => nav('produk')}>
-              <svg fill="none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Kembali
+              <svg fill="none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>Kembali
             </button>
             <div className="form-card">
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--T)', marginBottom: 16 }}>{editId ? 'Edit Produk' : 'Tambah Produk Baru'}</div>
@@ -275,13 +275,13 @@ export function AdminApp({ onLogout }) {
                 <label className="form-label">Foto Produk</label>
                 {form.img
                   ? <div style={{ position: 'relative' }}>
-                      <img src={form.img} className="foto-prev show" alt="Preview" />
-                      <button className="bukti-ubah" onClick={() => setForm(p => ({ ...p, img: '' }))}>Ubah</button>
-                    </div>
+                    <img src={form.img} className="foto-prev show" alt="Preview" />
+                    <button className="bukti-ubah" onClick={() => setForm(p => ({ ...p, img: '' }))}>Ubah</button>
+                  </div>
                   : <label className="foto-area btn-lift" htmlFor="aFotoInput">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                      <p>Upload foto produk</p><small>JPG, PNG, max 5MB</small>
-                    </label>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                    <p>Upload foto produk</p><small>JPG, PNG, max 5MB</small>
+                  </label>
                 }
                 <input type="file" id="aFotoInput" accept="image/*" style={{ display: 'none' }} onChange={handleFoto} />
               </div>
@@ -299,7 +299,7 @@ export function AdminApp({ onLogout }) {
 
             {/* Search Bar Transaksi Admin */}
             <div className="search-box" style={{ marginBottom: 14 }}>
-              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
                 className="search-input"
                 placeholder="Cari transaksi (Kode TRX, kasir/user, total, metode)..."
@@ -334,7 +334,7 @@ export function AdminApp({ onLogout }) {
         <div className={`page${page === 'detail-trx' ? ' aktif' : ''}`}>
           <div className="pc">
             <button className="back-btn btn-lift" onClick={() => nav('transaksi')}>
-              <svg fill="none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Kembali
+              <svg fill="none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>Kembali
             </button>
             {detTrx && (
               <>
@@ -365,7 +365,7 @@ export function AdminApp({ onLogout }) {
                     )}
                     <div className="struk-actions" style={{ marginTop: 14 }}>
                       <button className="btn-print btn-bounce" onClick={() => setShowStruk(detTrx.id)}>
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
                         Lihat &amp; Cetak Struk
                       </button>
                     </div>
@@ -384,7 +384,7 @@ export function AdminApp({ onLogout }) {
 
               {/* Search Bar Tentang Admin */}
               <div className="search-box" style={{ marginBottom: 18 }}>
-                <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
                 <input
                   className="search-input"
                   placeholder="Cari informasi toko, cabang, atau kontak..."
@@ -394,21 +394,21 @@ export function AdminApp({ onLogout }) {
               </div>
 
               <div className="about-desc-block">
-                <p>Toko Berkat Jaya adalah sebuah usaha retail yang secara khusus fokus pada penjualan sembako, singkatan dari sembilan bahan pokok, seperti beras, gula, minyak, tepung, dan produk pangan lainnya.</p>
+                <p>WaroengBude adalah sebuah usaha retail yang secara khusus fokus pada penjualan sembako, dari sembilan bahan pokok, seperti beras, gula, minyak, tepung, dan produk pangan lainnya.</p>
                 <p>Berkat Jaya telah menjadi pilihan utama bagi masyarakat yang mencari solusi praktis untuk memenuhi kebutuhan dapur mereka.</p>
               </div>
 
               <div className="about-info-cards">
                 <div className="about-info-card" id="lokasi-toko">
-                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg></div>
                   <div>
                     <div className="aic-title">Alamat &amp; Lokasi</div>
-                    <div className="aic-sub">Jl. Tambak Rejo 59, Surabaya</div>
-                    <div className="aic-tag">SURABAYA</div>
+                    <div className="aic-sub">Jl. Mulawarman Selatan, Kota Semarang</div>
+                    <div className="aic-tag">SEMARANG</div>
                   </div>
                 </div>
                 <div className="about-info-card">
-                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.42 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16l.19.92z"/></svg></div>
+                  <div className="aic-ico"><svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.42 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16l.19.92z" /></svg></div>
                   <div>
                     <div className="aic-title">Kontak Resmi</div>
                     <div className="aic-sub" style={{ fontWeight: 600, color: 'var(--G1)' }}>0813-3119-2564</div>
@@ -425,10 +425,10 @@ export function AdminApp({ onLogout }) {
 
       <nav className="bottom-nav">
         {[
-          { key: 'dashboard', label: 'Dashboard', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
-          { key: 'produk', label: 'Produk', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></> },
-          { key: 'transaksi', label: 'Transaksi', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/></> },
-          { key: 'tentang', label: 'Tentang', icon: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></> },
+          { key: 'dashboard', label: 'Dashboard', icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></> },
+          { key: 'produk', label: 'Produk', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
+          { key: 'transaksi', label: 'Transaksi', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><line x1="8" y1="9" x2="16" y2="9" /><line x1="8" y1="13" x2="14" y2="13" /></> },
+          { key: 'tentang', label: 'Tentang', icon: <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></> },
         ].map(item => (
           <button key={item.key} className={`bnav-item${page === item.key ? ' aktif' : ''}`} onClick={() => nav(item.key)}>
             <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon}</svg>
