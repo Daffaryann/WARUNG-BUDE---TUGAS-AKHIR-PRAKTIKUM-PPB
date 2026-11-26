@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { useToast } from '../../components/Toast'
 import { Modal } from '../../components/Modal'
@@ -93,9 +93,17 @@ function ProdukCard({ p, isSelected, onAdd, onDetail, onImgUpload }) {
 
 // ══ USER APP ══
 export function UserApp({ onLogout, onNavigateScreen }) {
-  const { produk, trx, heroImg, cart, cu, rp, cartCount, cartTotal, userTrx, kritis, addCart, ubahQty, delCart, clearCart, konfirmasi, updateProdukImg, uploadBanner } = useApp()
+  const { produk, trx, heroImg, cart, cu, rp, cartCount, cartTotal, userTrx, kritis, pendingSyncCount, addCart, ubahQty, delCart, clearCart, konfirmasi, updateProdukImg, uploadBanner } = useApp()
   const toast = useToast()
   const isOnline = useOnlineStatus()
+
+  useEffect(() => {
+    const onSynced = (e) => {
+      toast(`Koneksi kembali! ${e.detail?.syncedCount || ''} data offline berhasil masuk ke database.`)
+    }
+    window.addEventListener('wb-sync-complete', onSynced)
+    return () => window.removeEventListener('wb-sync-complete', onSynced)
+  }, [toast])
 
   const [page, setPage] = useState('beranda')
   const [detTrxId, setDetTrxId] = useState(null)
@@ -176,6 +184,9 @@ export function UserApp({ onLogout, onNavigateScreen }) {
       toast('Gagal menyimpan transaksi: ' + (result?.error || 'Cek koneksi & tabel transaksi Supabase'))
       return
     }
+    if (result.offline) {
+      toast('Mode Offline: Transaksi disimpan lokal & akan otomatis masuk ke database saat online!')
+    }
     setFinalTrx(result.data)
     setMetode('cash'); setBukti(''); setBuktiFile(null)
   }
@@ -198,12 +209,14 @@ export function UserApp({ onLogout, onNavigateScreen }) {
       <UserNav page={page} cartCount={cartCount} onNav={nav} onLogout={onLogout} cu={cu} />
 
       {/* ── OFFLINE BANNER ── */}
-      {!isOnline && (
+      {(!isOnline || pendingSyncCount > 0) && (
         <div className="offline-banner">
           <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width="16" height="16">
             <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
           </svg>
-          Tidak ada koneksi internet — hanya browsing tersedia. Transaksi tidak dapat diproses.
+          {!isOnline
+            ? `Mode Offline aktif — transaksi tetap bisa dibayar sampai selesai (disimpan lokal${pendingSyncCount > 0 ? `, ${pendingSyncCount} antrean` : ''}) dan otomatis masuk ke database saat online.`
+            : `Menyinkronkan ${pendingSyncCount} data lokal ke database...`}
         </div>
       )}
 
@@ -448,12 +461,10 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                         </div>
                         <button
                           className="btn-bayar btn-bounce"
-                          style={{ marginTop: 10, padding: 11, fontSize: 13, opacity: isOnline ? 1 : 0.5 }}
-                          onClick={() => isOnline && setModal(true)}
-                          disabled={!isOnline}
-                          title={!isOnline ? 'Tidak ada koneksi internet' : ''}
+                          style={{ marginTop: 10, padding: 11, fontSize: 13 }}
+                          onClick={() => setModal(true)}
                         >
-                          {isOnline ? `Bayar Sekarang · ${rp(cartTotal)}` : '⚠ Offline — Tidak Dapat Transaksi'}
+                          Bayar Sekarang · {rp(cartTotal)}
                         </button>
                       </div>
                     </>
@@ -724,12 +735,12 @@ export function UserApp({ onLogout, onNavigateScreen }) {
                 <div className="transfer-note">Transfer nominal tepat sesuai total.</div>
               </div>
             )}
-            <button className="btn-bayar btn-bounce" style={{ marginBottom: 8, opacity: isOnline ? 1 : 0.5 }} onClick={handleKonfirmasi} disabled={!isOnline}>
-              {isOnline ? 'Konfirmasi Pembayaran' : '⚠ Offline — Tidak Dapat Transaksi'}
+            <button className="btn-bayar btn-bounce" style={{ marginBottom: 8 }} onClick={handleKonfirmasi}>
+              {isOnline ? 'Konfirmasi Pembayaran' : 'Konfirmasi Pembayaran (Simpan Lokal)'}
             </button>
             {!isOnline && (
               <div style={{ textAlign: 'center', fontSize: 12, color: '#D97706', fontWeight: 600, marginBottom: 6 }}>
-                Sambungkan kembali internet untuk melanjutkan transaksi.
+                Mode Offline: Transaksi akan disimpan di database lokal &amp; otomatis masuk ke server saat online.
               </div>
             )}
             <button className="btn btn-r btn-bounce" style={{ width: '100%', padding: 11 }} onClick={() => setModal(false)}>Batal</button>

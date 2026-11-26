@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { useToast } from '../../components/Toast'
 import { Struk } from '../../components/Struk'
 import { Footer } from '../../components/Footer'
+import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 
 function iph(p) {
   return p.img
@@ -11,8 +12,17 @@ function iph(p) {
 }
 
 export function AdminApp({ onLogout }) {
-  const { produk, trx, cu, rp, saveProduk, delProduk } = useApp()
+  const { produk, trx, cu, rp, pendingSyncCount, saveProduk, delProduk } = useApp()
   const toast = useToast()
+  const isOnline = useOnlineStatus()
+
+  useEffect(() => {
+    const onSynced = (e) => {
+      toast(`Koneksi kembali! ${e.detail?.syncedCount || ''} data offline berhasil masuk ke Supabase.`)
+    }
+    window.addEventListener('wb-sync-complete', onSynced)
+    return () => window.removeEventListener('wb-sync-complete', onSynced)
+  }, [toast])
 
   const [page, setPage] = useState('dashboard')
   const [detTrxId, setDetTrxId] = useState(null)
@@ -83,7 +93,11 @@ export function AdminApp({ onLogout }) {
       toast(res.msg || 'Gagal menyimpan produk ke database')
       return
     }
-    toast(editId ? 'Produk diperbarui!' : form.nama + ' ditambahkan!')
+    if (res?.offline) {
+      toast('Mode Offline: Produk ditampung lokal & otomatis masuk ke Supabase saat online!')
+    } else {
+      toast(editId ? 'Produk diperbarui!' : form.nama + ' ditambahkan!')
+    }
     setForm(emptyForm); setEditId(null); nav('produk')
   }
 
@@ -138,6 +152,18 @@ export function AdminApp({ onLogout }) {
           <button className="logout-btn btn-bounce" onClick={onLogout}>Keluar</button>
         </div>
       </nav>
+
+      {/* ── OFFLINE BANNER ADMIN ── */}
+      {(!isOnline || pendingSyncCount > 0) && (
+        <div className="offline-banner">
+          <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width="16" height="16">
+            <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
+          </svg>
+          {!isOnline
+            ? `Mode Offline aktif — produk baru ditampung di database lokal${pendingSyncCount > 0 ? ` (${pendingSyncCount} antrean)` : ''} dan otomatis masuk ke Supabase saat online.`
+            : `Menyinkronkan ${pendingSyncCount} data lokal ke Supabase...`}
+        </div>
+      )}
 
       <div className="main">
         {/* ── DASHBOARD ── */}

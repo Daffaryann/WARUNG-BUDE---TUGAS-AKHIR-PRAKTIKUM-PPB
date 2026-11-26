@@ -1,5 +1,49 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+
+// ── LOCAL STORAGE KEYS (OFFLINE QUEUE & CACHE) ──
+const LS_KEYS = {
+  PRODUK_CACHE:   'wb_produk_cache',
+  TRX_CACHE:      'wb_trx_cache',
+  PENDING_PRODUK: 'wb_pending_produk',
+  PENDING_TRX:    'wb_pending_trx',
+}
+
+function readLS(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function writeLS(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val))
+  } catch (err) {
+    console.warn('Gagal menyimpan ke localStorage:', err)
+  }
+}
+
+function dataUrlToFile(dataUrl, filename = 'upload.jpg') {
+  try {
+    const [header, b64] = dataUrl.split(',')
+    const mimeMatch = header.match(/:(.*?);/)
+    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+    const bin = atob(b64)
+    const arr = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+    return new File([arr], filename, { type: mime })
+  } catch {
+    return null
+  }
+}
+
+function isNetworkError(errMsg = '') {
+  const m = String(errMsg).toLowerCase()
+  return !navigator.onLine || m.includes('failed to fetch') || m.includes('network') || m.includes('fetch')
+}
 
 // ── DATA AWAL (fallback jika Supabase belum terisi) ──
 export const INITIAL_PRODUK = [
@@ -32,35 +76,67 @@ export const INITIAL_USERS = [
 let _nId = 200
 
 export function useStore() {
-  // Ambil produk dari Supabase
-  const [produk, setProduk]   = useState([])
-  const [trx, setTrx]         = useState([])
+  // Ambil produk & transaksi dari cache lokal terlebih dahulu (agar tetap tampil saat offline)
+  const [produk, setProduk] = useState(() => readLS(LS_KEYS.PRODUK_CACHE, []))
+  const [trx, setTrx]       = useState(() => readLS(LS_KEYS.TRX_CACHE, []))
   const [heroImg, setHeroImg] = useState('')
   const [users]               = useState(INITIAL_USERS)
   const [cart, setCart]       = useState([])
   const [cu, setCu]           = useState(null)   // current user
+  const [pendingSyncCount, setPendingSyncCount] = useState(
+    () => readLS(LS_KEYS.PENDING_PRODUK, []).length + readLS(LS_KEYS.PENDING_TRX, []).length
+  )
+  const isSyncingRef = useRef(false)
+
+  const refreshPendingCount = useCallback(() => {
+    const total = readLS(LS_KEYS.PENDING_PRODUK, []).length + readLS(LS_KEYS.PENDING_TRX, []).length
+    setPendingSyncCount(total)
+  }, [])
+
+  // Simpan cache produk & transaksi ke localStorage setiap kali berubah
+  useEffect(() => {
+    if (produk.length > 0) writeLS(LS_KEYS.PRODUK_CACHE, produk)
+  }, [produk])
+
+  useEffect(() => {
+    writeLS(LS_KEYS.TRX_CACHE, trx)
+  }, [trx])
 
   // ── FETCH PRODUK, TRANSAKSI, & BANNER DARI SUPABASE ──
   useEffect(() => {
+    const pendingProds = readLS(LS_KEYS.PENDING_PRODUK, [])
+    const pendingTrxs  = readLS(LS_KEYS.PENDING_TRX, [])
+
     supabase.from('produk').select('*').order('id')
       .then(({ data, error }) => {
         if (data && data.length > 0) {
-          setProduk(data)
+          // Gabungkan data Supabase dengan produk baru yang masih menunggu sync offline
+          const pendingInserts = pendingProds
+            .filter(item => item.action === 'insert')
+            .map(item => item.localRecord)
+          setProduk([...data, ...pendingInserts])
         } else if (error) {
-          console.warn('Supabase fetch error, fallback ke data lokal:', error.message)
-          setProduk(INITIAL_PRODUK)
+          console.warn('Supabase fetch error, fallback ke cache lokal:', error.message)
+          const cached = readLS(LS_KEYS.PRODUK_CACHE, [])
+          setProduk(cached.length > 0 ? cached : INITIAL_PRODUK)
         } else {
-          setProduk(data || INITIAL_PRODUK)
+          const cached = readLS(LS_KEYS.PRODUK_CACHE, [])
+          setProduk(cached.length > 0 ? cached : INITIAL_PRODUK)
         }
       })
       .catch(() => {
-        setProduk(INITIAL_PRODUK)
+        const cached = readLS(LS_KEYS.PRODUK_CACHE, [])
+        setProduk(cached.length > 0 ? cached : INITIAL_PRODUK)
       })
 
     supabase.from('transaksi').select('*').order('created_at', { ascending: false })
       .then(({ data, error }) => {
-        if (data) setTrx(data)
-        else if (error) console.warn('Fetch transaksi gagal:', error.message)
+        if (data) {
+          const pendingLocalTrx = pendingTrxs.map(item => item.localRecord)
+          setTrx([...pendingLocalTrx, ...data])
+        } else if (error) {
+          console.warn('Fetch transaksi gagal:', error.message)
+        }
       })
       .catch(() => {})
 
@@ -139,66 +215,59 @@ export function useStore() {
   const cartTotal = cart.reduce((a, c) => a + c.harga * c.qty, 0)
   const cartCount = cart.reduce((a, c) => a + c.qty, 0)
 
-  // ── CHECKOUT & SIMPAN TRANSAKSI KE SUPABASE ──
-  const konfirmasi = useCallback(async (metode, bukti, buktiFile = null) => {
-    const now = new Date()
-    const tgl = now.toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-    const jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  // ── HELPER UPLOAD BUKTI TRANSFER ──
+  const uploadBuktiFile = useCallback(async (file, idTransaksi) => {
+    const ext = file.name?.split('.').pop() || 'jpg'
+    const path = `bukti/${idTransaksi}-${Date.now()}.${ext}`
+    const { error: errBucket } = await supabase.storage.from('bukti-transfer').upload(path, file, { upsert: true })
+    if (!errBucket) {
+      return supabase.storage.from('bukti-transfer').getPublicUrl(path)?.data?.publicUrl || null
+    }
+    const { error: errFallback } = await supabase.storage.from('produk-images').upload(path, file, { upsert: true })
+    if (!errFallback) {
+      return supabase.storage.from('produk-images').getPublicUrl(path)?.data?.publicUrl || null
+    }
+    return null
+  }, [])
 
-    // Hitung jumlah transaksi yang sudah ada di tabel transaksi
-    const { count } = await supabase
+  // ── HELPER INSERT TRANSAKSI KE SUPABASE ──
+  const pushTrxToSupabase = useCallback(async ({ baseData, userLabel, userId, buktiFile, cartItems }) => {
+    const { count, error: countErr } = await supabase
       .from('transaksi')
       .select('*', { count: 'exact', head: true })
+    if (countErr) {
+      return { ok: false, error: countErr.message }
+    }
 
-    // Format menjadi TRX-01, TRX-02, dst.
     const nomorUrut = String((count || 0) + 1).padStart(2, '0')
     const idTransaksi = `TRX-${nomorUrut}`
 
-    const total = cartTotal
-
-    let buktiUrl = metode === 'transfer' ? bukti : ''
-    if (metode === 'transfer' && buktiFile) {
-      const ext = buktiFile.name?.split('.').pop() || 'jpg'
-      const path = `bukti/${idTransaksi}-${Date.now()}.${ext}`
-      // Coba bucket bukti-transfer terlebih dahulu, jika tidak ada fallback ke produk-images
-      let uploaded = null
-      const { error: errBucket } = await supabase.storage.from('bukti-transfer').upload(path, buktiFile, { upsert: true })
-      if (!errBucket) {
-        uploaded = supabase.storage.from('bukti-transfer').getPublicUrl(path)?.data?.publicUrl
-      } else {
-        const { error: errFallback } = await supabase.storage.from('produk-images').upload(path, buktiFile, { upsert: true })
-        if (!errFallback) {
-          uploaded = supabase.storage.from('produk-images').getPublicUrl(path)?.data?.publicUrl
-        }
+    let buktiUrl = baseData.bukti || ''
+    if (baseData.metode === 'transfer') {
+      let fileToUpload = buktiFile
+      if (!fileToUpload && buktiUrl.startsWith('data:image/')) {
+        fileToUpload = dataUrlToFile(buktiUrl, `${idTransaksi}.jpg`)
       }
-      if (uploaded) buktiUrl = uploaded
+      if (fileToUpload) {
+        const uploaded = await uploadBuktiFile(fileToUpload, idTransaksi)
+        if (uploaded) buktiUrl = uploaded
+      }
     }
 
-    const itemsPayload = cart.map(c => ({ nama: c.nama, qty: c.qty, h: c.harga, sat: c.sat }))
-    const baseData = {
-      id: idTransaksi,
-      nama: cu ? cu.nama : 'Tamu',
-      tgl: tgl + ', ' + jam,
-      total,
-      metode,
-      bukti: buktiUrl,
-      items: itemsPayload,
-    }
-
-    const trxWithUser = {
+    const cleanBase = {
       ...baseData,
-      user: cu && !cu.isGuest ? cu.u : 'tamu',
+      id: idTransaksi,
+      bukti: buktiUrl,
     }
+    const trxWithUser = { ...cleanBase, user: userLabel }
 
-    // Simpan transaksi ke Supabase
     let insertError = null
     const { error: firstErr } = await supabase.from('transaksi').insert([trxWithUser])
     if (firstErr) {
-      // Jika tabel memakai kolom user_id (uuid) alih-alih user (text), coba ulang dengan user_id
       if (firstErr.message?.includes('user') && !firstErr.message?.includes('user_id')) {
         const trxWithUserId = {
-          ...baseData,
-          ...(cu?.id ? { user_id: cu.id } : {}),
+          ...cleanBase,
+          ...(userId ? { user_id: userId } : {}),
         }
         const { error: secondErr } = await supabase.from('transaksi').insert([trxWithUserId])
         insertError = secondErr
@@ -208,28 +277,87 @@ export function useStore() {
     }
 
     if (insertError) {
-      console.warn('Gagal menyimpan transaksi ke Supabase:', insertError.message)
       return { ok: false, error: insertError.message }
     }
 
-    const savedTrx = { ...trxWithUser }
-    setTrx(prev => [savedTrx, ...prev])
-
-    // Kurangi stok di Supabase & state lokal
-    for (const ci of cart) {
-      const prod = produk.find(p => p.id === ci.id)
-      if (prod) {
-        const newStok = Math.max(0, prod.stok - ci.qty)
+    // Update stok di Supabase produk
+    for (const ci of (cartItems || [])) {
+      const { data: prodRow } = await supabase.from('produk').select('stok').eq('id', ci.id).single()
+      if (prodRow) {
+        const newStok = Math.max(0, prodRow.stok - ci.qty)
         await supabase.from('produk').update({ stok: newStok }).eq('id', ci.id)
       }
     }
-    setProduk(prev => prev.map(p => {
-      const ci = cart.find(c => c.id === p.id)
-      return ci ? { ...p, stok: Math.max(0, p.stok - ci.qty) } : p
-    }))
-    setCart([])
-    return { ok: true, data: savedTrx }
-  }, [cart, cartTotal, cu, produk])
+
+    return { ok: true, data: trxWithUser }
+  }, [uploadBuktiFile])
+
+  // ── CHECKOUT & SIMPAN TRANSAKSI (ONLINE / OFFLINE QUEUE) ──
+  const konfirmasi = useCallback(async (metode, bukti, buktiFile = null) => {
+    const now = new Date()
+    const tgl = now.toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    const jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const itemsPayload = cart.map(c => ({ nama: c.nama, qty: c.qty, h: c.harga, sat: c.sat }))
+    const cartItems = cart.map(c => ({ id: c.id, qty: c.qty }))
+
+    const baseData = {
+      nama: cu ? cu.nama : 'Tamu',
+      tgl: tgl + ', ' + jam,
+      total: cartTotal,
+      metode,
+      bukti: metode === 'transfer' ? bukti : '',
+      items: itemsPayload,
+    }
+    const userLabel = cu && !cu.isGuest ? cu.u : 'tamu'
+    const userId = cu?.id || null
+
+    const saveOfflineTrx = () => {
+      const tempId = `TRX-LOKAL-${String(readLS(LS_KEYS.PENDING_TRX, []).length + 1).padStart(2, '0')}`
+      const localRecord = { ...baseData, id: tempId, user: userLabel, isOfflinePending: true }
+      const queue = readLS(LS_KEYS.PENDING_TRX, [])
+      queue.push({ tempId, baseData, userLabel, userId, cartItems, localRecord })
+      writeLS(LS_KEYS.PENDING_TRX, queue)
+      refreshPendingCount()
+
+      setTrx(prev => [localRecord, ...prev])
+      setProduk(prev => prev.map(p => {
+        const ci = cart.find(c => c.id === p.id)
+        return ci ? { ...p, stok: Math.max(0, p.stok - ci.qty) } : p
+      }))
+      setCart([])
+      return { ok: true, offline: true, data: localRecord }
+    }
+
+    // Jika sedang offline, langsung simpan ke database lokal
+    if (!navigator.onLine) {
+      return saveOfflineTrx()
+    }
+
+    // Jika online, coba kirim langsung ke Supabase
+    try {
+      const res = await pushTrxToSupabase({ baseData, userLabel, userId, buktiFile, cartItems })
+      if (!res.ok) {
+        if (isNetworkError(res.error)) {
+          return saveOfflineTrx()
+        }
+        console.warn('Gagal menyimpan transaksi ke Supabase:', res.error)
+        return { ok: false, error: res.error }
+      }
+
+      setTrx(prev => [res.data, ...prev])
+      setProduk(prev => prev.map(p => {
+        const ci = cart.find(c => c.id === p.id)
+        return ci ? { ...p, stok: Math.max(0, p.stok - ci.qty) } : p
+      }))
+      setCart([])
+      return { ok: true, data: res.data }
+    } catch (err) {
+      if (isNetworkError(err?.message)) {
+        return saveOfflineTrx()
+      }
+      return { ok: false, error: err?.message || 'Gagal menyimpan transaksi' }
+    }
+  }, [cart, cartTotal, cu, pushTrxToSupabase, refreshPendingCount])
 
   // ── UPLOAD FOTO KE SUPABASE STORAGE ──
   const uploadFoto = useCallback(async (file, produkId = 'new') => {
@@ -251,58 +379,98 @@ export function useStore() {
     }
   }, [])
 
-  // ── PRODUK ADMIN ──
+  // ── PRODUK ADMIN (ONLINE / OFFLINE QUEUE) ──
   const saveProduk = useCallback(async (data) => {
     const { id, imgFile, ...rest } = data
-    let imgUrl = rest.img || ''
-
-    // 1. Upload foto ke Supabase Storage terlebih dahulu jika ada file baru
-    if (imgFile) {
-      const uploadedUrl = await uploadFoto(imgFile, id || 'new')
-      if (!uploadedUrl) {
-        return { ok: false, msg: 'Gagal upload foto ke Storage (produk-images). Cek policy bucket Supabase.' }
-      }
-      imgUrl = uploadedUrl
-    }
-
-    const payload = {
+    const basePayload = {
       nama: rest.nama,
       kat: rest.kat,
       sat: rest.sat,
       hB: rest.hB,
       hJ: rest.hJ,
       stok: rest.stok,
-      img: imgUrl,
+      img: rest.img || '',
     }
 
-    // 2. Simpan (.update / .insert) ke tabel produk Supabase
-    if (id) {
-      const { data: updated, error } = await supabase
-        .from('produk')
-        .update(payload)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) {
-        console.warn('Update produk ke Supabase gagal:', error.message)
-        return { ok: false, msg: 'Gagal update produk: ' + error.message }
+    const saveOfflineProduk = () => {
+      const isEdit = Boolean(id)
+      const tempId = isEdit ? id : `OFF-${Date.now()}`
+      const localRecord = { ...basePayload, id: tempId, isOfflinePending: true }
+      const pendingImgDataUrl = imgFile && basePayload.img.startsWith('data:image/') ? basePayload.img : null
+
+      const queue = readLS(LS_KEYS.PENDING_PRODUK, [])
+      queue.push({
+        action: isEdit ? 'update' : 'insert',
+        id: isEdit ? id : null,
+        tempId,
+        payload: { ...basePayload, img: pendingImgDataUrl ? '' : basePayload.img },
+        pendingImgDataUrl,
+        localRecord,
+      })
+      writeLS(LS_KEYS.PENDING_PRODUK, queue)
+      refreshPendingCount()
+
+      if (isEdit) {
+        setProduk(prev => prev.map(p => p.id === id ? { ...p, ...localRecord } : p))
+      } else {
+        setProduk(prev => [...prev, localRecord])
       }
-      setProduk(prev => prev.map(p => p.id === id ? (updated || { ...p, ...payload }) : p))
-      return { ok: true, data: updated }
-    } else {
-      const { data: inserted, error } = await supabase
-        .from('produk')
-        .insert(payload)
-        .select()
-        .single()
-      if (error) {
-        console.warn('Insert produk ke Supabase gagal:', error.message)
-        return { ok: false, msg: 'Gagal simpan produk: ' + error.message }
-      }
-      setProduk(prev => [...prev, inserted])
-      return { ok: true, data: inserted }
+      return { ok: true, offline: true, data: localRecord }
     }
-  }, [uploadFoto])
+
+    // Jika offline, tampung ke antrean localStorage terlebih dahulu
+    if (!navigator.onLine) {
+      return saveOfflineProduk()
+    }
+
+    let imgUrl = basePayload.img
+    try {
+      // 1. Upload foto ke Supabase Storage terlebih dahulu jika ada file baru
+      if (imgFile) {
+        const uploadedUrl = await uploadFoto(imgFile, id || 'new')
+        if (!uploadedUrl) {
+          if (!navigator.onLine) return saveOfflineProduk()
+          return { ok: false, msg: 'Gagal upload foto ke Storage (produk-images). Cek policy bucket Supabase.' }
+        }
+        imgUrl = uploadedUrl
+      }
+
+      const payload = { ...basePayload, img: imgUrl }
+
+      // 2. Simpan (.update / .insert) ke tabel produk Supabase
+      if (id) {
+        const { data: updated, error } = await supabase
+          .from('produk')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single()
+        if (error) {
+          if (isNetworkError(error.message)) return saveOfflineProduk()
+          console.warn('Update produk ke Supabase gagal:', error.message)
+          return { ok: false, msg: 'Gagal update produk: ' + error.message }
+        }
+        setProduk(prev => prev.map(p => p.id === id ? (updated || { ...p, ...payload }) : p))
+        return { ok: true, data: updated }
+      } else {
+        const { data: inserted, error } = await supabase
+          .from('produk')
+          .insert(payload)
+          .select()
+          .single()
+        if (error) {
+          if (isNetworkError(error.message)) return saveOfflineProduk()
+          console.warn('Insert produk ke Supabase gagal:', error.message)
+          return { ok: false, msg: 'Gagal simpan produk: ' + error.message }
+        }
+        setProduk(prev => [...prev, inserted])
+        return { ok: true, data: inserted }
+      }
+    } catch (err) {
+      if (isNetworkError(err?.message)) return saveOfflineProduk()
+      return { ok: false, msg: err?.message || 'Gagal menyimpan produk' }
+    }
+  }, [uploadFoto, refreshPendingCount])
 
   const delProduk = useCallback(async (id) => {
     const { error } = await supabase.from('produk').delete().eq('id', id)
@@ -396,12 +564,120 @@ export function useStore() {
     setCart([])
   }, [])
 
+  // ── SINKRONISASI OTOMATIS ANTREAN LOKAL SAAT KEMBALI ONLINE ──
+  const syncOfflineData = useCallback(async () => {
+    if (!navigator.onLine || isSyncingRef.current) return
+    const pendingProds = readLS(LS_KEYS.PENDING_PRODUK, [])
+    const pendingTrxs  = readLS(LS_KEYS.PENDING_TRX, [])
+    if (pendingProds.length === 0 && pendingTrxs.length === 0) return
+
+    isSyncingRef.current = true
+    let syncedCount = 0
+
+    try {
+      // 1. Sinkronkan produk baru/edit dari antrean lokal ke Supabase
+      const remainingProds = []
+      for (const item of pendingProds) {
+        if (!navigator.onLine) {
+          remainingProds.push(item)
+          continue
+        }
+        try {
+          let payload = { ...item.payload }
+          if (item.pendingImgDataUrl) {
+            const imgFile = dataUrlToFile(item.pendingImgDataUrl, `produk-${Date.now()}.jpg`)
+            if (imgFile) {
+              const uploadedUrl = await uploadFoto(imgFile, item.id || 'new')
+              if (uploadedUrl) payload.img = uploadedUrl
+            }
+          }
+
+          if (item.action === 'update' && item.id) {
+            const { data: updated, error } = await supabase
+              .from('produk')
+              .update(payload)
+              .eq('id', item.id)
+              .select()
+              .single()
+            if (error) {
+              remainingProds.push(item)
+            } else {
+              syncedCount++
+              setProduk(prev => prev.map(p => p.id === item.id ? (updated || { ...p, ...payload, isOfflinePending: false }) : p))
+            }
+          } else {
+            const { data: inserted, error } = await supabase
+              .from('produk')
+              .insert(payload)
+              .select()
+              .single()
+            if (error) {
+              remainingProds.push(item)
+            } else {
+              syncedCount++
+              setProduk(prev => prev.map(p => p.id === item.tempId ? inserted : p))
+            }
+          }
+        } catch {
+          remainingProds.push(item)
+        }
+      }
+      writeLS(LS_KEYS.PENDING_PRODUK, remainingProds)
+
+      // 2. Sinkronkan transaksi dari antrean lokal ke Supabase
+      const remainingTrxs = []
+      for (const item of pendingTrxs) {
+        if (!navigator.onLine) {
+          remainingTrxs.push(item)
+          continue
+        }
+        try {
+          const res = await pushTrxToSupabase({
+            baseData: item.baseData,
+            userLabel: item.userLabel,
+            userId: item.userId,
+            buktiFile: null,
+            cartItems: item.cartItems,
+          })
+          if (!res.ok) {
+            remainingTrxs.push(item)
+          } else {
+            syncedCount++
+            setTrx(prev => prev.map(t => t.id === item.tempId ? res.data : t))
+          }
+        } catch {
+          remainingTrxs.push(item)
+        }
+      }
+      writeLS(LS_KEYS.PENDING_TRX, remainingTrxs)
+      refreshPendingCount()
+
+      if (syncedCount > 0 && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('wb-sync-complete', { detail: { syncedCount } }))
+      }
+    } finally {
+      isSyncingRef.current = false
+    }
+  }, [uploadFoto, pushTrxToSupabase, refreshPendingCount])
+
+  useEffect(() => {
+    if (navigator.onLine) {
+      syncOfflineData()
+    }
+    const handleOnline = () => {
+      syncOfflineData()
+    }
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
+  }, [syncOfflineData])
+
   const userTrx = cu ? trx.filter(t => t.user === cu.u) : []
   const kritis  = produk.filter(p => p.stok <= 5 && p.stok > 0)
 
   return {
     produk, trx, heroImg, users, cart, cu, rp,
     cartTotal, cartCount, userTrx, kritis,
+    pendingSyncCount, syncOfflineData,
     addCart, ubahQty, delCart, clearCart,
     konfirmasi, uploadFoto, uploadBanner,
     saveProduk, delProduk, updateProdukImg,
